@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <Nullable>disable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Grpc.AspNetCore" Version="2.64.0"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Company.Shared.Clients.ProductService\Company.Shared.Clients.ProductService.csproj"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <Protobuf Include="..\Company.Shared.Clients.ProductService\Protos\product.proto"
+                  GrpcServices="Server"/>
+    </ItemGroup>
+
+</Project>

@@ -1,0 +1,32 @@
+@ApiGateway_HostAddress = https://localhost:7080
+
+### Get all products
+GET {{ApiGateway_HostAddress}}/products
+Accept: application/json
+
+### Create a new product
+POST {{ApiGateway_HostAddress}}/products
+Content-Type: application/json
+
+{
+  "name": "Product B",
+  "price": 20.00,
+  "description": "Description of product B"
+}
+
+### Get product by ID
+GET {{ApiGateway_HostAddress}}/products/1
+Accept: application/json
+
+### Update product by ID
+PUT {{ApiGateway_HostAddress}}/products/1
+Content-Type: application/json
+
+{
+  "name": "Updated Product",
+  "price": 29.99,
+  "description": "Updated description"
+}
+
+### Delete product by ID
+DELETE {{ApiGateway_HostAddress}}/products/3
