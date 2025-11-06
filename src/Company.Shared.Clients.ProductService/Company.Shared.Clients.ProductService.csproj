@@ -16,7 +16,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Protobuf Include="Protos\product.proto">
+        <Protobuf Include="Protos\product-grpc-contract.proto">
             <GrpcServices>Client</GrpcServices>
             <Access>Public</Access>
             <ProtoCompile>True</ProtoCompile>
@@ -24,6 +24,10 @@
             <OutputDir>obj\Debug\net9.0\</OutputDir>
             <Generator>MSBuild:Compile</Generator>
         </Protobuf>
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Company.Shared\Company.Shared.csproj"/>
     </ItemGroup>
 
 </Project>

@@ -1,6 +1,7 @@
+using ApiGateway;
 using Company.Shared.Clients.ProductService;
+using Company.Shared.Clients.ProductService.Models;
 using Company.Shared.Clients.ProductService.Protos;
-using Grpc.Core;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
@@ -24,68 +25,54 @@ app.UseHttpsRedirection();
 
 // --- Product CRUD endpoints ---
 
-app.MapGet("/products", async (IProductServiceClient client) =>
+app.MapGet("/products", async (IProductServiceClient client, string phrase,
+        int page = 1, int pageSize = 10) =>
     {
-        ProductView[] products = await client.ListProductsAsync();
-        return Results.Ok(products);
+        Result<ProductView[]> result = await client.ListProductsAsync
+        (
+            phrase: phrase,
+            page: page,
+            pageSize: pageSize
+        );
+        return result.HasError ? result.ToApiErrorResponse() : Results.Ok(result);
     })
     .WithName("GetProducts")
     .WithOpenApi(); // Adds OpenAPI metadata for Swagger docs
 
-app.MapGet("/products/{id:int}", async (int id, IProductServiceClient client) =>
+app.MapGet("/products/{id:int}", async (IProductServiceClient client, int id) =>
     {
-        try
-        {
-            ProductView product = await client.GetProductAsync(id);
-            return Results.Ok(product);
-        }
-        catch (RpcException ex) when (ex.StatusCode == StatusCode.NotFound)
-        {
-            return Results.NotFound($"Product {id} not found");
-        }
+        Result<ProductView> result = await client.GetProductAsync(id);
+        return result.HasError ? result.ToApiErrorResponse() : Results.Ok(result);
     })
     .WithName("GetProduct")
     .WithOpenApi();
 
-app.MapPost("/products", async (CreateProductDto dto, IProductServiceClient client) =>
+app.MapPost("/products", async (IProductServiceClient client, CreateProductDto dto) =>
     {
-        ProductView product = await client.CreateProductAsync(dto.Name, dto.Price, dto.Description);
-        return Results.Created($"/api/products/{product.Id}", product);
+        Result<ProductView> result = await client.CreateProductAsync(dto.Name, dto.Price, dto.Description);
+        return result.HasError
+            ? result.ToApiErrorResponse()
+            : Results.Created($"/api/products/{result.Data.Id}", result);
     })
     .WithName("CreateProduct")
     .WithOpenApi();
 
-app.MapPut("/products/{id:int}", async (int id, UpdateProductDto dto, IProductServiceClient client) =>
+app.MapPut("/products/{id:int}", async (IProductServiceClient client, int id, UpdateProductDto dto) =>
     {
-        try
-        {
-            ProductView product = await client.UpdateProductAsync(id, dto.Name, dto.Price, dto.Description);
-            return Results.Ok(product);
-        }
-        catch (RpcException ex) when (ex.StatusCode == StatusCode.NotFound)
-        {
-            return Results.NotFound($"Product {id} not found");
-        }
+        Result<ProductView> result = await client.UpdateProductAsync(id, dto.Name, dto.Price, dto.Description);
+        return result.HasError ? result.ToApiErrorResponse() : Results.Ok(result);
     })
     .WithName("UpdateProduct")
     .WithOpenApi();
 
-app.MapDelete("/products/{id:int}", async (int id, IProductServiceClient client) =>
+app.MapDelete("/products/{id:int}", async (IProductServiceClient client, int id) =>
     {
-        try
-        {
-            await client.DeleteProductAsync(id);
-            return Results.NoContent();
-        }
-        catch (RpcException ex) when (ex.StatusCode == StatusCode.NotFound)
-        {
-            return Results.NotFound($"Product {id} not found");
-        }
+        Result result = await client.DeleteProductAsync(id);
+        return result.HasError ? result.ToApiErrorResponse() : Results.Ok(result);
     })
     .WithName("DeleteProduct")
     .WithOpenApi();
 
-// --- Run the app ---
 app.Run();
 
 // --- DTOs for request bodies ---

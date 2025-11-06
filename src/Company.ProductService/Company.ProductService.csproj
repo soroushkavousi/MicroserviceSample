@@ -12,11 +12,11 @@
 
     <ItemGroup>
         <ProjectReference Include="..\Company.Shared.Clients.ProductService\Company.Shared.Clients.ProductService.csproj"/>
+        <ProjectReference Include="..\Company.Shared\Company.Shared.csproj"/>
     </ItemGroup>
 
     <ItemGroup>
-        <Protobuf Include="..\Company.Shared.Clients.ProductService\Protos\product.proto"
-                  GrpcServices="Server"/>
+        <Protobuf Include="..\Company.Shared.Clients.ProductService\Protos\product-grpc-contract.proto" GrpcServices="Server"/>
     </ItemGroup>
 
 </Project>

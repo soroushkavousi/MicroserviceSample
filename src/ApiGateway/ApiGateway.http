@@ -1,10 +1,23 @@
 @ApiGateway_HostAddress = https://localhost:7080
 
 ### Get all products
-GET {{ApiGateway_HostAddress}}/products
+GET {{ApiGateway_HostAddress}}/products?
+    phrase=&
+    page=1&
+    pageSize=10
 Accept: application/json
 
-### Create a new product
+### Create product A
+POST {{ApiGateway_HostAddress}}/products
+Content-Type: application/json
+
+{
+  "name": "Product A",
+  "price": 10.00,
+  "description": "Description of product A"
+}
+
+### Create product B
 POST {{ApiGateway_HostAddress}}/products
 Content-Type: application/json
 
@@ -29,4 +42,4 @@ Content-Type: application/json
 }
 
 ### Delete product by ID
-DELETE {{ApiGateway_HostAddress}}/products/3
+DELETE {{ApiGateway_HostAddress}}/products/1

@@ -1,0 +1,59 @@
+syntax = "proto3";
+
+option csharp_namespace = "Company.Shared.Clients.ProductService.Protos";
+
+package product;
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/any.proto";
+
+// ───── Custom error detail ─────
+enum ProductErrorCodeView {
+  INTERNAL_SERVER_ERROR   = 0;
+  AUTHENTICATION_ERROR    = 1;
+  ACCESS_DENIED           = 2;
+  ITEM_NOT_FOUND          = 3;
+  ITEM_ALREADY_EXISTS     = 4;
+  INVALID_FORMAT          = 5;
+  INVALID_VALUE           = 6;
+}
+
+message ProductErrorView {
+  ProductErrorCodeView code   = 1;
+  string           message = 2;
+}
+
+// ───── View models ─────
+message ProductView {
+  int32  id          = 1;
+  string name        = 2;
+  double price       = 3;
+  string description = 4;
+}
+
+message ProductListView {
+  repeated ProductView items = 1;
+}
+
+message Pagination {
+  int32 page_number = 1;
+  int32 page_size   = 2;
+  int32 total_items = 3;
+  int32 total_pages = 4;
+}
+
+// ───── Requests ─────
+message GetProductRequest      { int32 id = 1; }
+message CreateProductRequest   { string name = 1; double price = 2; string description = 3; }
+message UpdateProductRequest   { int32 id = 1; string name = 2; double price = 3; string description = 4; }
+message DeleteProductRequest   { int32 id = 1; }
+message ListProductsRequest    { string phrase = 1; int32 page = 2; int32 page_size = 3; }
+
+// ───── Service ─────
+service ProductGrpcContract {
+  rpc GetProduct    (GetProductRequest)    returns (ProductView);
+  rpc CreateProduct (CreateProductRequest) returns (ProductView);
+  rpc UpdateProduct (UpdateProductRequest) returns (ProductView);
+  rpc DeleteProduct (DeleteProductRequest) returns (google.protobuf.Empty);
+  rpc ListProducts  (ListProductsRequest)  returns (ProductListView);
+}
