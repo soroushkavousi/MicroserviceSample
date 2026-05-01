@@ -2,14 +2,17 @@ using System.Collections.Concurrent;
 using Company.ProductService.Extensions;
 using Company.ProductService.Mappers;
 using Company.ProductService.Models;
+using Company.Services.Product.Events;
 using Company.Shared.Clients.ProductService.Protos;
 using Company.Shared.Extensions;
 using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
+using MassTransit;
 
 namespace Company.ProductService;
 
-public class ProductServiceGrpc : ProductGrpcContract.ProductGrpcContractBase
+public class ProductServiceGrpc(ITopicProducer<int, ProductCreatedEvent> producer)
+    : ProductGrpcContract.ProductGrpcContractBase
 {
     private static readonly ConcurrentDictionary<int, Product> _products = new();
     private static int _lastId;
@@ -63,6 +66,17 @@ public class ProductServiceGrpc : ProductGrpcContract.ProductGrpcContractBase
                 .ToRpcException();
 
         await Task.Delay(_fakeDelay, context.CancellationToken);
+
+        ProductCreatedEvent @event = new()
+        {
+            ProductId = id,
+            Name = request.Name,
+            Price = (decimal)request.Price,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        await producer.Produce(id, @event, context.CancellationToken);
+
         return product.ToProductView();
     }
 

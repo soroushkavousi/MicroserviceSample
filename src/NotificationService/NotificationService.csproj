@@ -2,24 +2,18 @@
 
     <PropertyGroup>
         <TargetFramework>net9.0</TargetFramework>
-        <Nullable>disable</Nullable>
+        <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Grpc.AspNetCore" Version="2.64.0"/>
         <PackageReference Include="MassTransit" Version="9.1.0"/>
         <PackageReference Include="MassTransit.Kafka" Version="9.1.0"/>
+        <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.10"/>
     </ItemGroup>
 
     <ItemGroup>
         <ProjectReference Include="..\Company.Services\Company.Services.csproj"/>
-        <ProjectReference Include="..\Company.Shared.Clients.ProductService\Company.Shared.Clients.ProductService.csproj"/>
-        <ProjectReference Include="..\Company.Shared\Company.Shared.csproj"/>
-    </ItemGroup>
-
-    <ItemGroup>
-        <Protobuf Include="..\Company.Shared.Clients.ProductService\Protos\product-grpc-contract.proto" GrpcServices="Server"/>
     </ItemGroup>
 
 </Project>
