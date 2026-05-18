@@ -1,3 +1,4 @@
+using System.Reflection;
 using Company.ProductService;
 using Company.Services.Product.Events;
 using MassTransit;
@@ -5,8 +6,14 @@ using MassTransit;
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 builder.Services.AddGrpc();
 
+Assembly assembly = Assembly.GetExecutingAssembly();
+
 builder.Services.AddMassTransit(x =>
 {
+    x.SetKebabCaseEndpointNameFormatter();
+
+    x.AddConsumers(assembly);
+
     x.UsingInMemory((context, cfg) =>
     {
         cfg.ConfigureEndpoints(context);
@@ -14,7 +21,7 @@ builder.Services.AddMassTransit(x =>
 
     x.AddRider(rider =>
     {
-        rider.AddProducer<int, ProductCreatedEvent>("product-created");
+        rider.AddProducer<int, ProductCreatedEvent>("product-created-event");
 
         rider.UsingKafka((context, k) =>
         {

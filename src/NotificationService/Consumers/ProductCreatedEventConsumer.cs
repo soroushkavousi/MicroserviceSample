@@ -3,7 +3,7 @@ using MassTransit;
 
 namespace NotificationService.Consumers;
 
-public class ProductCreatedConsumer(ILogger<ProductCreatedConsumer> logger)
+public class ProductCreatedEventConsumer(ILogger<ProductCreatedEventConsumer> logger)
     : IConsumer<ProductCreatedEvent>
 {
     public Task Consume(ConsumeContext<ProductCreatedEvent> context)
