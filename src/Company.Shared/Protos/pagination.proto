@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+option csharp_namespace = "Company.Shared.Dtos";
+
+package company.shared;
+
+message PaginationDto {
+  int32 page_number = 1;
+  int32 page_size   = 2;
+  int32 total_items = 3;
+  int32 total_pages = 4;
+}

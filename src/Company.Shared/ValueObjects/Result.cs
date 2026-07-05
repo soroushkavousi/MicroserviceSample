@@ -1,0 +1,62 @@
+namespace Company.Shared.ValueObjects;
+
+public record Result
+{
+    public Result() { }
+
+    public Result(Error error)
+    {
+        Error = error ?? throw new ArgumentNullException(nameof(error));
+    }
+
+    public Error Error { get; }
+    public bool HasError => Error is not null;
+
+    public static implicit operator Result(Error error) => new(error);
+    public static implicit operator Result(string errorCode) => new(new(errorCode));
+
+    public void SetErrorDescription(string errorDescription)
+    {
+        if (!HasError)
+            throw new InvalidOperationException("Cannot set error description when result has no error.");
+
+        Error.SetDescription(errorDescription);
+    }
+}
+
+public record Result<TData> : Result
+{
+    public Result(TData data)
+    {
+        if (EqualityComparer<TData>.Default.Equals(data, default))
+            throw new InvalidOperationException();
+
+        Data = data;
+    }
+
+    public Result(TData data, Pagination pagination)
+        : this(data)
+    {
+        Pagination = pagination;
+    }
+
+    public Result(Error error)
+        : base(error)
+    {
+    }
+
+    public Result(string errorCode)
+        : base(new(errorCode))
+    {
+    }
+
+    public TData Data { get; init; }
+    public Pagination Pagination { get; init; }
+
+    public static implicit operator Result<TData>(TData data) => new(data);
+    public static implicit operator Result<TData>(Error error) => new(error);
+    public static implicit operator Result<TData>(string errorCode) => new(errorCode);
+
+    public static implicit operator Result<TData>((TData data, Pagination pagination) page) =>
+        new(page.data, page.pagination);
+}

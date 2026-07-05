@@ -14,7 +14,9 @@ public static class LinqExtensions
     /// <param name="source">The source IQueryable</param>
     /// <param name="condition">The condition that determines whether to apply the predicate</param>
     /// <param name="predicate">The filter expression to apply if the condition is true</param>
-    /// <returns>Filtered IQueryable if condition is true; otherwise the original IQueryable</returns>
+    /// <returns>
+    ///     Filtered IQueryable if condition is true; otherwise the original IQueryable
+    /// </returns>
     public static IQueryable<T> WhereIf<T>(
         this IQueryable<T> source,
         bool condition,
@@ -28,7 +30,9 @@ public static class LinqExtensions
     /// <param name="source">The source IEnumerable</param>
     /// <param name="condition">The condition that determines whether to apply the predicate</param>
     /// <param name="predicate">The filter expression to apply if the condition is true</param>
-    /// <returns>Filtered IEnumerable if condition is true; otherwise the original IEnumerable</returns>
+    /// <returns>
+    ///     Filtered IEnumerable if condition is true; otherwise the original IEnumerable
+    /// </returns>
     public static IEnumerable<T> WhereIf<T>(
         this IEnumerable<T> source,
         bool condition,

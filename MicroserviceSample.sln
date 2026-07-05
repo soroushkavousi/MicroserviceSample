@@ -4,7 +4,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{A3171734-EFA
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Company.ProductService", "src\Company.ProductService\Company.ProductService.csproj", "{43C5AB41-A3F9-4A84-9496-A19B892978A8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Company.Shared.Clients.ProductService", "src\Company.Shared.Clients.ProductService\Company.Shared.Clients.ProductService.csproj", "{AF6907B9-4A6F-47C6-BA25-E13CA9525370}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Company.Shared.ProductService", "src\Company.Shared.ProductService\Company.Shared.ProductService.csproj", "{AF6907B9-4A6F-47C6-BA25-E13CA9525370}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ApiGateway", "src\ApiGateway\ApiGateway.csproj", "{5CB7F8A7-A1D7-48B8-88D2-289A54281DA0}"
 EndProject
@@ -12,13 +12,29 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Company.Shared", "src\Compa
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{98052062-06EB-4B81-8103-831E1B0E352A}"
 	ProjectSection(SolutionItems) = preProject
-		README.md = README.md
 		docker-compose.yml = docker-compose.yml
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Company.Services", "src\Company.Services\Company.Services.csproj", "{620E4015-C363-4D4F-BAAA-0DDDEAEFBA68}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{E8F4A2B1-3C5D-4E6F-9A0B-1C2D3E4F5A6B}"
+	ProjectSection(SolutionItems) = preProject
+		README.md = README.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "features", "features", "{F9A5B3C2-4D6E-5F7A-0B1C-2D3E4F5A6B7C}"
+	ProjectSection(SolutionItems) = preProject
+		docs\features\yarp-composite-gateway.md = docs\features\yarp-composite-gateway.md
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NotificationService", "src\NotificationService\NotificationService.csproj", "{B2E88709-9A4A-43BB-8E15-979F2E2B13AE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Company.CartService", "src\Company.CartService\Company.CartService.csproj", "{A7B8C9D0-E1F2-3456-789A-BCDEF0123456}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "conventions", "conventions", "{90E4DA20-497D-4360-B7D3-E73F176FBC05}"
+	ProjectSection(SolutionItems) = preProject
+		.cursor\conventions.mdc = .cursor\conventions.mdc
+		src\Company.Shared\.cursor\csharp-dotnet-conventions.mdc = src\Company.Shared\.cursor\csharp-dotnet-conventions.mdc
+		src\Company.Shared\.cursor\microservices.mdc = src\Company.Shared\.cursor\microservices.mdc
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -30,8 +46,11 @@ Global
 		{AF6907B9-4A6F-47C6-BA25-E13CA9525370} = {A3171734-EFA6-419F-94D1-C5FC42A67317}
 		{5CB7F8A7-A1D7-48B8-88D2-289A54281DA0} = {A3171734-EFA6-419F-94D1-C5FC42A67317}
 		{D72B2025-8BD5-43C7-9B57-6ADFF0113BAB} = {A3171734-EFA6-419F-94D1-C5FC42A67317}
-		{620E4015-C363-4D4F-BAAA-0DDDEAEFBA68} = {A3171734-EFA6-419F-94D1-C5FC42A67317}
 		{B2E88709-9A4A-43BB-8E15-979F2E2B13AE} = {A3171734-EFA6-419F-94D1-C5FC42A67317}
+		{A7B8C9D0-E1F2-3456-789A-BCDEF0123456} = {A3171734-EFA6-419F-94D1-C5FC42A67317}
+		{E8F4A2B1-3C5D-4E6F-9A0B-1C2D3E4F5A6B} = {98052062-06EB-4B81-8103-831E1B0E352A}
+		{F9A5B3C2-4D6E-5F7A-0B1C-2D3E4F5A6B7C} = {E8F4A2B1-3C5D-4E6F-9A0B-1C2D3E4F5A6B}
+		{90E4DA20-497D-4360-B7D3-E73F176FBC05} = {E8F4A2B1-3C5D-4E6F-9A0B-1C2D3E4F5A6B}
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{43C5AB41-A3F9-4A84-9496-A19B892978A8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
@@ -50,13 +69,13 @@ Global
 		{D72B2025-8BD5-43C7-9B57-6ADFF0113BAB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D72B2025-8BD5-43C7-9B57-6ADFF0113BAB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D72B2025-8BD5-43C7-9B57-6ADFF0113BAB}.Release|Any CPU.Build.0 = Release|Any CPU
-		{620E4015-C363-4D4F-BAAA-0DDDEAEFBA68}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{620E4015-C363-4D4F-BAAA-0DDDEAEFBA68}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{620E4015-C363-4D4F-BAAA-0DDDEAEFBA68}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{620E4015-C363-4D4F-BAAA-0DDDEAEFBA68}.Release|Any CPU.Build.0 = Release|Any CPU
 		{B2E88709-9A4A-43BB-8E15-979F2E2B13AE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{B2E88709-9A4A-43BB-8E15-979F2E2B13AE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B2E88709-9A4A-43BB-8E15-979F2E2B13AE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B2E88709-9A4A-43BB-8E15-979F2E2B13AE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A7B8C9D0-E1F2-3456-789A-BCDEF0123456}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A7B8C9D0-E1F2-3456-789A-BCDEF0123456}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A7B8C9D0-E1F2-3456-789A-BCDEF0123456}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A7B8C9D0-E1F2-3456-789A-BCDEF0123456}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

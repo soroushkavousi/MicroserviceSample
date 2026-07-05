@@ -1,5 +1,5 @@
 using System.Reflection;
-using Company.Services.Product.Events;
+using Company.Shared.ProductService.Events;
 using Confluent.Kafka;
 using MassTransit;
 using NotificationService.Consumers;
@@ -39,7 +39,6 @@ builder.Services.AddMassTransit(x =>
 
 WebApplication app = builder.Build();
 
-Console.WriteLine("NotificationService is started.");
-app.MapGet("/", () => "NotificationService is running...");
+app.MapGet("/", () => Results.Ok(new { service = "Company.NotificationService" }));
 
 app.Run();

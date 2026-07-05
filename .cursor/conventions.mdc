@@ -1,0 +1,13 @@
+---
+description: Read C# conventions from Company.Shared
+alwaysApply: true
+---
+
+# Conventions pointer
+
+**Read and apply** the rule files in **`src/Company.Shared/.cursor/`**:
+
+1. **`dotnet-csharp-conventions.mdc`** — .NET C# style, formatting, mappers, patterns
+2. **`microservices.mdc`** — microservice layout, REST/gRPC, `Result`, `ErrorCode` (when editing under `src/`)
+
+Edit those files when conventions change — do not duplicate rules at the workspace root.

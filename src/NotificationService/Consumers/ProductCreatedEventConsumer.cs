@@ -1,4 +1,4 @@
-using Company.Services.Product.Events;
+using Company.Shared.ProductService.Events;
 using MassTransit;
 
 namespace NotificationService.Consumers;
@@ -13,18 +13,14 @@ public class ProductCreatedEventConsumer(ILogger<ProductCreatedEventConsumer> lo
             ProductCreatedEvent message = context.Message;
 
             logger.LogInformation(
-                "📧[{DateTime}] Email sent to admin: Product created " +
-                "- {Name} ({Id}) Price: {Price}",
-                DateTime.UtcNow,
-                message.Name,
-                message.ProductId,
-                message.Price);
+                "Product created event processed. ProductId={ProductId}, Name={Name}, Price={Price}",
+                message.ProductId, message.Name, message.Price);
 
             return Task.CompletedTask;
         }
-        catch (Exception e)
+        catch (Exception ex)
         {
-            Console.WriteLine(e);
+            logger.LogError(ex, "Failed to process ProductCreatedEvent.");
             throw;
         }
     }

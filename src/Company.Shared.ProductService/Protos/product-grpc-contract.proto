@@ -1,0 +1,42 @@
+syntax = "proto3";
+
+option csharp_namespace = "Company.Shared.ProductService.Protos";
+
+package product;
+
+import "google/protobuf/empty.proto";
+import "pagination.proto";
+
+// Models
+message ProductContractDto {
+  int64  id          = 1;
+  string name        = 2;
+  double price       = 3;
+  string description = 4;
+}
+
+message ProductListContractDto {
+  repeated ProductContractDto items = 1;
+  company.shared.PaginationDto pagination = 2;
+}
+
+message ProductByIdsListContractDto {
+  repeated ProductContractDto items = 1;
+}
+
+// Requests
+message GetProductRequest      { int64 id = 1; }
+message CreateProductRequest   { string name = 1; double price = 2; string description = 3; }
+message UpdateProductRequest   { int64 id = 1; string name = 2; double price = 3; string description = 4; }
+message DeleteProductRequest   { int64 id = 1; }
+message ListProductsRequest    { string phrase = 1; int32 page = 2; int32 page_size = 3; }
+message ListProductsByIdsRequest { repeated int64 ids = 1; }
+
+service ProductGrpcContract {
+  rpc GetProduct    (GetProductRequest)    returns (ProductContractDto);
+  rpc CreateProduct (CreateProductRequest) returns (ProductContractDto);
+  rpc UpdateProduct (UpdateProductRequest) returns (ProductContractDto);
+  rpc DeleteProduct (DeleteProductRequest) returns (google.protobuf.Empty);
+  rpc ListProducts  (ListProductsRequest)  returns (ProductListContractDto);
+  rpc ListProductsByIds (ListProductsByIdsRequest) returns (ProductByIdsListContractDto);
+}
