@@ -179,7 +179,12 @@ Reference: **`ValueObjects/Error.cs`**.
 - Don't run **`git commit`** unless asked.
 - When you do suggest: read **full pending working tree** (`git status` + `git diff`); title + body in one copy-paste block.
 - Prefix: **`feat:`**, **`fix:`**, **`refactor:`**, **`ai:`** (Cursor rules/skills), **`docs:`** (product docs) — **no scope in parentheses**.
-- **Title:** after the prefix, start with a **verb** (`add`, `fix`, `remove`, `update`, `introduce`, …) — not a bare noun phrase. Plain language; no heavy jargon like `instrument`/`orchestrate`.
+- **Choose prefix by intent:**
+  - **`feat:`** — new capability or behavior the project did not have before (new endpoint, new service, new integration).
+  - **`refactor:`** — reshape existing code or settings without adding a new user-facing capability (serializer options, DI wiring, rename, extract method).
+  - **`fix:`** — correct broken or wrong behavior.
+  - Do **not** default to **`feat:`** when only tuning or reorganizing what already exists.
+- **Title:** after the prefix, start with a **simple verb** (`add`, `fix`, `hide`, `remove`, `update`, `wire`, …) — not a bare noun phrase. Plain language; no heavy jargon (`instrument`, `orchestrate`, `omit`, …).
 - **Body:** one block — title, blank line, then body. Use **bullet lines** (`- …`) when several distinct changes are easier to scan than one paragraph. Keep bullets short (one idea each). Omit body when the title alone is enough.
 - Do not use separate "Title:" / "Body:" headings in the suggestion — one copy-paste block for git.
 
@@ -196,6 +201,13 @@ feat: add pending credit inbox for faster balance updates
 - Finalize send: commit credit only after Engine save
 - Remove RemoveCreditTransaction; use CompensationJob for stuck Reserved
 - Add migrations, SQL scripts, and performance docs
+```
+
+```
+refactor: hide null fields in API JSON responses
+
+- Set WhenWritingNull on shared JsonSerializerOptions extensions
+- Register ConfigureSharedHttpJsonOptions in ProductService and CartService
 ```
 
 ```

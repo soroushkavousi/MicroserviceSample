@@ -1,8 +1,10 @@
 using Company.CartService.Endpoints;
 using Company.CartService.Services;
+using Company.Shared.Extensions;
 using Company.Shared.ProductService;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
+builder.Services.ConfigureSharedHttpJsonOptions();
 
 string productServiceAddress = builder.Configuration["ProductService:GrpcAddress"]
     ?? "https://localhost:7251";

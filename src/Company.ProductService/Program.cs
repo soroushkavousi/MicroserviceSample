@@ -2,10 +2,12 @@ using System.Reflection;
 using Company.ProductService;
 using Company.ProductService.Endpoints;
 using Company.ProductService.Services;
+using Company.Shared.Extensions;
 using Company.Shared.ProductService.Events;
 using MassTransit;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
+builder.Services.ConfigureSharedHttpJsonOptions();
 builder.Services.AddGrpc();
 builder.Services.AddSingleton<IProductRepository, ProductRepository>();
 builder.Services.AddScoped<IProductService, ProductService>();
