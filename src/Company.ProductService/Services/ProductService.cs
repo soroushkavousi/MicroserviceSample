@@ -24,7 +24,9 @@ public sealed class ProductService(
 
         IEnumerable<Product> query = productRepository.GetAll()
             .WhereIf(!string.IsNullOrWhiteSpace(phrase),
-                x => x.Name.Contains(phrase, StringComparison.OrdinalIgnoreCase));
+                x => x.Name.Contains(phrase!, StringComparison.OrdinalIgnoreCase)
+                    || (x.Description ?? string.Empty).Contains(phrase, StringComparison.OrdinalIgnoreCase)
+                    || x.Price.ToString().Contains(phrase, StringComparison.OrdinalIgnoreCase));
 
         int totalItems = query.Count();
         ProductDto[] items = query
