@@ -1,6 +1,7 @@
 using System.Net;
+using Company.Shared.ProductService.Errors;
 
-namespace Company.Shared.ProductService.Errors;
+namespace Company.ProductService.Extensions;
 
 public static class ProductErrorCodeExtensions
 {

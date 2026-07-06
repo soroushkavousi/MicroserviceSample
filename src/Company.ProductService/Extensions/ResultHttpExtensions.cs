@@ -1,4 +1,3 @@
-using Company.Shared.ProductService.Errors;
 using Company.Shared.ValueObjects;
 
 namespace Company.ProductService.Extensions;
