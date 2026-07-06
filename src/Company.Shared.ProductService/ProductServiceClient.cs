@@ -1,8 +1,10 @@
-using Company.Shared.ProductService.Errors;
-using Company.Shared.Mappers;
+using System.Net.Security;
 using Company.Shared.Dtos;
+using Company.Shared.Mappers;
+using Company.Shared.ProductService.Errors;
 using Company.Shared.ProductService.Protos;
 using Company.Shared.ValueObjects;
+using DotNetPotion.AppEnvironmentPack;
 using Grpc.Core;
 using Grpc.Net.Client;
 
@@ -15,7 +17,20 @@ public sealed class ProductServiceClient : IProductServiceClient, IDisposable
 
     public ProductServiceClient(string address)
     {
-        _channel = GrpcChannel.ForAddress(address);
+        GrpcChannelOptions options = new();
+
+        if (AppEnvironment.IsDevelopment)
+        {
+            options.HttpHandler = new SocketsHttpHandler
+            {
+                SslOptions = new()
+                {
+                    RemoteCertificateValidationCallback = static (_, _, _, _) => true
+                }
+            };
+        }
+
+        _channel = GrpcChannel.ForAddress(address, options);
         _client = new(_channel);
     }
 

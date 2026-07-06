@@ -1,7 +1,10 @@
+using ApiGateway.Configs;
+
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddReverseProxy()
-    .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"));
+    .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"))
+    .AddConfigFilter<ClusterDefaultsConfigFilter>();
 
 WebApplication app = builder.Build();
 
