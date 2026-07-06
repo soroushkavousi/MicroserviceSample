@@ -1,3 +1,5 @@
+using Ardalis.GuardClauses;
+
 namespace Company.Shared.ValueObjects;
 
 public record Result
@@ -6,7 +8,8 @@ public record Result
 
     public Result(Error error)
     {
-        Error = error ?? throw new ArgumentNullException(nameof(error));
+        Guard.Against.Null(error);
+        Error = error;
     }
 
     public Error Error { get; }
@@ -17,9 +20,7 @@ public record Result
 
     public void SetErrorDescription(string errorDescription)
     {
-        if (!HasError)
-            throw new InvalidOperationException("Cannot set error description when result has no error.");
-
+        Guard.Against.NullOrWhiteSpace(errorDescription);
         Error.SetDescription(errorDescription);
     }
 }
@@ -28,9 +29,7 @@ public record Result<TData> : Result
 {
     public Result(TData data)
     {
-        if (EqualityComparer<TData>.Default.Equals(data, default))
-            throw new InvalidOperationException();
-
+        Guard.Against.Null(data);
         Data = data;
     }
 
