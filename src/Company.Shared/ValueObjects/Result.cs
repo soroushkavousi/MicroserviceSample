@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Ardalis.GuardClauses;
 
 namespace Company.Shared.ValueObjects;
@@ -13,7 +14,9 @@ public record Result
     }
 
     public Error Error { get; }
-    public bool HasError => Error is not null;
+    public bool IsSuccess => Error is null;
+    [JsonIgnore]
+    public bool HasError => !IsSuccess;
 
     public static implicit operator Result(Error error) => new(error);
     public static implicit operator Result(string errorCode) => new(new(errorCode));
