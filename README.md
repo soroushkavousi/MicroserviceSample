@@ -17,9 +17,9 @@ not production.
 |---------------------------------|-----------------------------------------------------------------------------------------------------|
 | `Company.ProductService`        | Product catalog: **REST** (public) + **gRPC** (internal); publishes `ProductCreatedEvent` on create |
 | `Company.CartService`           | Shopping cart **REST** API; reads live product prices via **gRPC**                                  |
-| `ApiGateway`                    | **YARP** reverse proxy — forwards `/products/**` and `/cart/**`                                     |
+| `ApiGateway`                    | **YARP** reverse proxy — forwards `/products/**` and `/cart/**`; fake JWT auth + `X-User-Id` header for cart |
 | `NotificationService`           | Kafka consumer; reacts to product-created events                                                    |
-| `Company.Shared`                | Common types (Result, pagination, errors)                                                           |
+| `Company.Shared`                | Common types (Result, pagination, errors, user identity headers)                                    |
 | `Company.Shared.ProductService` | gRPC proto/client, Kafka events, shared Result types for ProductService                             |
 
 ### How it fits together
@@ -28,10 +28,10 @@ not production.
 Client (REST)
     │
     ▼
-ApiGateway (YARP)
-    ├── /products/** ──► ProductService (REST)
-    └── /cart/**     ──► CartService (REST)
-                              │
+ApiGateway (YARP + fake JWT auth)
+    ├── /products/** ──► ProductService (REST, public)
+    └── /cart/**     ──► CartService (REST, requires Bearer {userId})
+                              │  X-User-Id header set by YARP transform
                               └── gRPC ──► ProductService
 
 ProductService ── Kafka ──► NotificationService
@@ -62,5 +62,6 @@ See [docs/features/yarp-composite-gateway.md](docs/features/yarp-composite-gatew
 3. Create a product via the gateway REST API (`POST /products`). ProductService publishes the event and
    NotificationService logs the notification.
 
-4. Add items to a user's cart (`POST /cart/{userId}/items`) and view it (`GET /cart/{userId}`). Each user has one
-   lazy-created cart. Update a product price and refresh the cart to see live gRPC enrichment.
+4. Add items to a user's cart (`POST /cart/items`) and view it (`GET /cart`). Send
+   `Authorization: Bearer {userId}` via the gateway (fake JWT for learning). Each user has one lazy-created cart.
+   Update a product price and refresh the cart to see live gRPC enrichment.

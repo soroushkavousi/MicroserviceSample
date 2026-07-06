@@ -15,13 +15,13 @@ Kafka / NotificationService stay unchanged.
 ## Target architecture
 
 ```
-Client (REST)
+Client (REST + Authorization: Bearer {userId})
     │
     ▼
-ApiGateway  ── YARP ──┬── /products/** ──► ProductService (REST)
-                      └── /cart/**     ──► CartService (REST)
-                                              │
-                                              └── gRPC ──► ProductService
+ApiGateway  ── fake JWT auth + YARP transform (X-User-Id) ──┬── /products/** ──► ProductService (REST)
+                                                             └── /cart/**     ──► CartService (REST)
+                                                                                      │
+                                                                                      └── gRPC ──► ProductService
 
 ProductService ── Kafka ──► NotificationService
 ```
@@ -30,10 +30,12 @@ ProductService ── Kafka ──► NotificationService
 
 | Topic                  | Decision                                                                                                                      |
 |------------------------|-------------------------------------------------------------------------------------------------------------------------------|
-| Gateway role           | Pure reverse proxy (YARP). No gRPC client in gateway.                                                                         |
-| Product CRUD (public)  | REST on `ProductService`, proxied by YARP.                                                                                    |
+| Gateway role           | YARP reverse proxy. Validates fake JWT on cart routes; forwards `X-User-Id` to backends via request transform.                |
+| Product CRUD (public)  | REST on `ProductService`, proxied by YARP. No auth required.                                                                 |
+| Cart auth (gateway)    | `Authorization: Bearer {userId}` (fake JWT for learning). Invalid/missing token → `401` on `/cart/**`.                        |
+| User identity (internal) | Gateway sets `X-User-Id` on the proxied request. Microservices read it via `Company.Shared` helpers — JWT is not forwarded. |
 | gRPC use case          | `CartService` enriches cart lines with latest product data via `IProductServiceClient`.                                       |
-| Cart identity          | One cart per **`userId`** in route path; lazy-created on first access. No separate cart creation endpoint.                    |
+| Cart identity          | One cart per authenticated user; lazy-created on first access. `userId` is not in route or response body.                     |
 | Shared product package | `Company.Shared.ProductService` — gRPC proto/client + Kafka events.                                                           |
 | Internal HTTP          | Use `http://localhost:5148` (ProductService) and `http://localhost:5152` (CartService) to avoid TLS issues between processes. |
 | Shared product logic   | `ProductService` singleton used by gRPC handler and REST endpoints.                                                           |
@@ -53,10 +55,11 @@ ProductService ── Kafka ──► NotificationService
 - [x] Add project `Company.CartService`.
 - [x] In-memory `CartService` keyed by `userId` (one cart per user).
 - [x] REST endpoints:
-    - `GET /cart/{userId}` — view cart with live prices (lazy-created if empty)
-    - `POST /cart/{userId}/items` — add/update line `{ productId, quantity }`
-    - `DELETE /cart/{userId}/items/{productId}` — remove line
-    - `DELETE /cart/{userId}` — clear cart
+    - `GET /cart` — view cart with live prices (lazy-created if empty)
+    - `POST /cart/items` — add/update line `{ productId, quantity }`
+    - `DELETE /cart/items/{productId}` — remove line
+    - `DELETE /cart` — clear cart
+- [x] Resolve user from `X-User-Id` header (`Company.Shared`); return `401` if missing.
 - [x] Register `IProductServiceClient` pointing at ProductService gRPC address.
 
 ### Phase 3 — ApiGateway (YARP)
@@ -65,6 +68,8 @@ ProductService ── Kafka ──► NotificationService
 - [x] Configure `ReverseProxy` routes/clusters in `appsettings.json`.
 - [x] `MapReverseProxy()` as the main entry point for `/products/**` and `/cart/**`.
 - [x] Keep a small root endpoint describing routed services.
+- [x] Fake JWT authentication handler (`Bearer {userId}`) + `AuthenticatedUser` policy on cart route.
+- [x] YARP request transform: strip client `X-User-Id`, forward authenticated user id to backends.
 
 ### Phase 4 — Solution & docs
 
@@ -91,11 +96,12 @@ dotnet run --project src/ApiGateway
 
 2. **Add to cart** (user `1`):
 
-   `POST https://localhost:7080/cart/1/items` with body `{ "productId": 1, "quantity": 2 }`
+   `POST https://localhost:7080/cart/items` with header `Authorization: Bearer 1` and body
+   `{ "productId": 1, "quantity": 2 }`
 
 3. **View cart**:
 
-   `GET https://localhost:7080/cart/1`
+   `GET https://localhost:7080/cart` with header `Authorization: Bearer 1`
 
 4. **Update product price** via gateway, then **GET cart** again — line totals reflect live gRPC price.
 
@@ -103,7 +109,7 @@ dotnet run --project src/ApiGateway
 
 ## Future extensions (optional learning)
 
-- YARP path transforms / request headers (`X-Forwarded-*`)
+- Replace fake JWT handler with real `AddJwtBearer` (transform code stays unchanged)
 - Active health checks on clusters
 - Load balancing with multiple destinations
 - Order checkout service consuming cart + publishing `OrderPlacedEvent`

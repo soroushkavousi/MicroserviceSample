@@ -1,6 +1,7 @@
 using Company.CartService.Extensions;
 using Company.CartService.Models.Dtos;
 using Company.CartService.Services;
+using Company.Shared.Extensions;
 using Company.Shared.ValueObjects;
 
 namespace Company.CartService.Endpoints;
@@ -9,13 +10,16 @@ public static class RemoveCartItemEndpoint
 {
     public static void MapRemoveCartItem(this RouteGroupBuilder group)
     {
-        group.MapDelete("/{userId:long}/items/{productId:long}", HandleAsync);
+        group.MapDelete("/items/{productId:long}", HandleAsync);
     }
 
     private static async Task<IResult> HandleAsync(
-        ICartService cartService, long userId, long productId,
+        HttpContext httpContext, ICartService cartService, long productId,
         CancellationToken cancellationToken)
     {
+        if (!httpContext.TryGetUserId(out long userId))
+            return Results.Unauthorized();
+
         Result<CartDto> result = await cartService.RemoveItemAsync(
             userId, productId, cancellationToken);
         return result.ToHttpResponse();

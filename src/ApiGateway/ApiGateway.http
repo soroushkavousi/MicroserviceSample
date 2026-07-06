@@ -50,20 +50,24 @@ Content-Type: application/json
 DELETE {{ApiGateway_HostAddress}}/products/1
 
 ### Get user cart (lazy-created if empty)
-GET {{ApiGateway_HostAddress}}/cart/{{userId}}
+GET {{ApiGateway_HostAddress}}/cart
+Authorization: Bearer {{userId}}
 Accept: application/json
 
 ### Add item to user cart
-POST {{ApiGateway_HostAddress}}/cart/{{userId}}/items
+POST {{ApiGateway_HostAddress}}/cart/items
+Authorization: Bearer {{userId}}
 Content-Type: application/json
 
 {
-  "productId": 1,
-  "quantity": 2
+  "productId": 3,
+  "quantity": 20
 }
 
 ### Remove item from user cart
-DELETE {{ApiGateway_HostAddress}}/cart/{{userId}}/items/1
+DELETE {{ApiGateway_HostAddress}}/cart/items/1
+Authorization: Bearer {{userId}}
 
 ### Clear user cart
-DELETE {{ApiGateway_HostAddress}}/cart/{{userId}}
+DELETE {{ApiGateway_HostAddress}}/cart
+Authorization: Bearer {{userId}}

@@ -60,7 +60,6 @@ public sealed class CartService(
         {
             CartDto emptyCart = new()
             {
-                UserId = cart.UserId,
                 Lines = [],
                 Total = 0
             };
@@ -74,7 +73,6 @@ public sealed class CartService(
         {
             CartDto emptyCart = new()
             {
-                UserId = cart.UserId,
                 Lines = [],
                 Total = 0
             };
@@ -101,7 +99,6 @@ public sealed class CartService(
 
         CartDto cartDto = new()
         {
-            UserId = cart.UserId,
             Lines = lines.ToArray(),
             Total = lines.Sum(x => x.LineTotal)
         };
