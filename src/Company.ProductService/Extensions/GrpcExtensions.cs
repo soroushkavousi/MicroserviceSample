@@ -1,5 +1,6 @@
-using Company.ProductService.Models;
-using Company.Shared.Clients.ProductService.Protos;
+using Company.Shared.ProductService.Errors;
+using Company.Shared.Dtos;
+using Company.Shared.ValueObjects;
 using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
 using Status = Google.Rpc.Status;
@@ -8,30 +9,35 @@ namespace Company.ProductService.Extensions;
 
 public static class GrpcExtensions
 {
-    public static RpcException ToRpcException(this ProductError error)
+    public static RpcException ToRpcException(this Error error)
     {
         StatusCode grpcCode = error.Code switch
         {
-            ProductErrorCode.ItemNotFound => StatusCode.NotFound,
-            ProductErrorCode.ItemAlreadyExists => StatusCode.AlreadyExists,
-            ProductErrorCode.InvalidValue or ProductErrorCode.InvalidFormat
+            ProductErrorCode.ProductNotFound => StatusCode.NotFound,
+            ProductErrorCode.ProductAlreadyExists => StatusCode.AlreadyExists,
+            ProductErrorCode.ProductInvalidValue or ProductErrorCode.ProductInvalidFormat
                 => StatusCode.InvalidArgument,
             ProductErrorCode.AuthenticationError => StatusCode.Unauthenticated,
             ProductErrorCode.AccessDenied => StatusCode.PermissionDenied,
             _ => StatusCode.Internal
         };
 
-        ProductErrorView errorView = new()
+        string description = string.IsNullOrWhiteSpace(error.Description)
+            ? error.Code.GetDescription()
+            : error.Description;
+
+        ErrorDto errorDto = new()
         {
-            Code = (ProductErrorCodeView)(short)error.Code,
-            Message = error.Message
+            Code = error.Code,
+            Message = description
         };
 
-        return new Status
+        Status status = new()
         {
             Code = (int)grpcCode,
-            Message = error.Message,
-            Details = { Any.Pack(errorView) }
-        }.ToRpcException();
+            Message = errorDto.Message,
+            Details = { Any.Pack(errorDto) }
+        };
+        return status.ToRpcException();
     }
 }

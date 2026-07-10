@@ -7,12 +7,11 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.10"/>
-        <PackageReference Include="Swashbuckle.AspNetCore" Version="9.0.6"/>
+        <PackageReference Include="Yarp.ReverseProxy" Version="2.3.0"/>
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Company.Shared.Clients.ProductService\Company.Shared.Clients.ProductService.csproj"/>
+        <ProjectReference Include="..\Company.Shared\Company.Shared.csproj"/>
     </ItemGroup>
 
 </Project>

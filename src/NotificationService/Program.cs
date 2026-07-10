@@ -1,40 +1,37 @@
-using Company.Services.Product.Events;
+using System.Reflection;
+using Company.Shared.ProductService.Events;
 using Confluent.Kafka;
 using MassTransit;
 using NotificationService.Consumers;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
+Assembly assembly = Assembly.GetExecutingAssembly();
 
 builder.Services.AddMassTransit(x =>
 {
-    x.AddConsumer<ProductCreatedConsumer>();
+    x.SetKebabCaseEndpointNameFormatter();
 
-    x.UsingInMemory((context, cfg) =>
-    {
-        cfg.ConfigureEndpoints(context);
-    });
+    x.UsingInMemory((context, cfg) => { });
 
     x.AddRider(rider =>
     {
-        rider.AddConsumer<ProductCreatedConsumer>();
+        rider.AddConsumers(assembly);
 
         rider.UsingKafka((context, k) =>
         {
             k.Host("localhost:29092");
 
             k.TopicEndpoint<ProductCreatedEvent>(
-                topicName: "product-created",
+                topicName: "product-created-event",
                 groupId: "notification-service-group",
                 configure: e =>
                 {
+                    e.ConfigureConsumer<ProductCreatedEventConsumer>(context);
+
                     e.AutoOffsetReset = AutoOffsetReset.Earliest;
-
                     e.ConcurrentMessageLimit = 1;
-
                     e.CheckpointInterval = TimeSpan.FromSeconds(3);
                     e.CheckpointMessageCount = 5000;
-
-                    e.ConfigureConsumer<ProductCreatedConsumer>(context);
                 });
         });
     });
@@ -42,7 +39,6 @@ builder.Services.AddMassTransit(x =>
 
 WebApplication app = builder.Build();
 
-Console.WriteLine("NotificationService is started.");
-app.MapGet("/", () => "NotificationService is running...");
+app.MapGet("/", () => Results.Ok(new { service = "Company.NotificationService" }));
 
 app.Run();

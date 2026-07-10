@@ -1,116 +1,87 @@
-using System.Collections.Concurrent;
 using Company.ProductService.Extensions;
 using Company.ProductService.Mappers;
-using Company.ProductService.Models;
-using Company.Services.Product.Events;
-using Company.Shared.Clients.ProductService.Protos;
-using Company.Shared.Extensions;
+using Company.ProductService.Models.Dtos;
+using Company.ProductService.Services;
+using Company.Shared.Mappers;
+using Company.Shared.ProductService.Protos;
+using Company.Shared.ValueObjects;
 using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
-using MassTransit;
 
 namespace Company.ProductService;
 
-public class ProductServiceGrpc(ITopicProducer<int, ProductCreatedEvent> producer)
+public class ProductServiceGrpc(IProductService productService)
     : ProductGrpcContract.ProductGrpcContractBase
 {
-    private static readonly ConcurrentDictionary<int, Product> _products = new();
-    private static int _lastId;
-    private static readonly TimeSpan _fakeDelay = TimeSpan.FromMilliseconds(15);
-
-    public override async Task<ProductListView> ListProducts(ListProductsRequest request, ServerCallContext context)
+    public override async Task<ProductListContractDto> ListProducts(ListProductsRequest request,
+        ServerCallContext context)
     {
-        int page = request.Page <= 0 ? 1 : request.Page;
-        int pageSize = request.PageSize <= 0 ? _products.Count : request.PageSize;
+        Result<ProductDto[]> listResult = await productService.ListProductsAsync(
+            request.Phrase, request.Page, request.PageSize, context.CancellationToken);
+        if (listResult.HasError)
+            throw listResult.Error.ToRpcException();
 
-        ProductView[] products = _products.Values
-            .WhereIf(!string.IsNullOrWhiteSpace(request.Phrase),
-                x => x.Name.Contains(request.Phrase, StringComparison.OrdinalIgnoreCase))
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .Select(p => p.ToProductView())
-            .ToArray();
-
-        await Task.Delay(_fakeDelay, context.CancellationToken);
-        ProductListView result = new();
-        result.Items.AddRange(products);
+        ProductListContractDto result = new();
+        result.Items.AddRange(listResult.Data.Select(x => x.ToContractDto()));
+        result.Pagination = listResult.Pagination.ToDto();
         return result;
     }
 
-    public override async Task<ProductView> GetProduct(GetProductRequest request, ServerCallContext context)
+    public override async Task<ProductByIdsListContractDto> ListProductsByIds(
+        ListProductsByIdsRequest request, ServerCallContext context)
     {
-        if (!_products.TryGetValue(request.Id, out Product product))
-            throw new ProductError(ProductErrorCode.ItemNotFound, $"Product {request.Id} not found.")
-                .ToRpcException();
+        Result<ProductDto[]> listResult = await productService.ListProductsByIdsAsync(
+            request.Ids.ToArray(), context.CancellationToken);
+        if (listResult.HasError)
+            throw listResult.Error.ToRpcException();
 
-        await Task.Delay(_fakeDelay, context.CancellationToken);
-        return product.ToProductView();
+        ProductByIdsListContractDto result = new();
+        result.Items.AddRange(listResult.Data.Select(x => x.ToContractDto()));
+        return result;
     }
 
-    public override async Task<ProductView> CreateProduct(CreateProductRequest request, ServerCallContext context)
+    public override async Task<ProductContractDto> GetProduct(GetProductRequest request,
+        ServerCallContext context)
     {
-        if (string.IsNullOrWhiteSpace(request.Name))
-            throw new ProductError(ProductErrorCode.InvalidFormat, "Product name is required.")
-                .ToRpcException();
+        Result<ProductDto> result = await productService.GetProductAsync(
+            request.Id, context.CancellationToken);
+        if (result.HasError)
+            throw result.Error.ToRpcException();
 
-        bool exists = _products.Values.Any(p => p.Name == request.Name);
-        if (exists)
-            throw new ProductError(ProductErrorCode.ItemAlreadyExists, $"Product '{request.Name}' already exists.")
-                .ToRpcException();
-
-        int id = Interlocked.Increment(ref _lastId);
-        Product product = new(id, request.Name, request.Price, request.Description);
-
-        if (!_products.TryAdd(id, product))
-            throw new ProductError(ProductErrorCode.InternalServerError, $"Failed to add product {request.Name}.")
-                .ToRpcException();
-
-        await Task.Delay(_fakeDelay, context.CancellationToken);
-
-        ProductCreatedEvent @event = new()
-        {
-            ProductId = id,
-            Name = request.Name,
-            Price = (decimal)request.Price,
-            CreatedAt = DateTime.UtcNow
-        };
-
-        await producer.Produce(id, @event, context.CancellationToken);
-
-        return product.ToProductView();
+        return result.Data.ToContractDto();
     }
 
-    public override async Task<ProductView> UpdateProduct(UpdateProductRequest request, ServerCallContext context)
+    public override async Task<ProductContractDto> CreateProduct(CreateProductRequest request,
+        ServerCallContext context)
     {
-        if (!_products.TryGetValue(request.Id, out Product product))
-            throw new ProductError(ProductErrorCode.ItemNotFound, $"Product {request.Id} not found.")
-                .ToRpcException();
+        Result<ProductDto> result = await productService.CreateProductAsync(
+            request.Name, request.Price, request.Description, context.CancellationToken);
+        if (result.HasError)
+            throw result.Error.ToRpcException();
 
-        if (string.IsNullOrWhiteSpace(request.Name))
-            throw new ProductError(ProductErrorCode.InvalidFormat, "Product name cannot be empty.")
-                .ToRpcException();
-
-        if (request.Name != product.Name)
-        {
-            bool exists = _products.Values.Any(p => p.Name == request.Name);
-            if (exists)
-                throw new ProductError(ProductErrorCode.ItemAlreadyExists, $"Product '{request.Name}' already exists.")
-                    .ToRpcException();
-        }
-
-        product.Modify(request.Name, request.Price, request.Description);
-        await Task.Delay(_fakeDelay, context.CancellationToken);
-
-        return product.ToProductView();
+        return result.Data.ToContractDto();
     }
 
-    public override async Task<Empty> DeleteProduct(DeleteProductRequest request, ServerCallContext context)
+    public override async Task<ProductContractDto> UpdateProduct(UpdateProductRequest request,
+        ServerCallContext context)
     {
-        if (!_products.TryRemove(request.Id, out _))
-            throw new ProductError(ProductErrorCode.ItemNotFound, $"Product {request.Id} not found.")
-                .ToRpcException();
+        Result<ProductDto> result = await productService.UpdateProductAsync(
+            request.Id, request.Name, request.Price, request.Description,
+            context.CancellationToken);
+        if (result.HasError)
+            throw result.Error.ToRpcException();
 
-        await Task.Delay(_fakeDelay, context.CancellationToken);
+        return result.Data.ToContractDto();
+    }
+
+    public override async Task<Empty> DeleteProduct(DeleteProductRequest request,
+        ServerCallContext context)
+    {
+        Result result = await productService.DeleteProductAsync(
+            request.Id, context.CancellationToken);
+        if (result.HasError)
+            throw result.Error.ToRpcException();
+
         return new();
     }
 }

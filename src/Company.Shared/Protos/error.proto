@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+option csharp_namespace = "Company.Shared.Dtos";
+
+package company.shared;
+
+message ErrorDto {
+  string code    = 1;
+  string message = 2;
+}

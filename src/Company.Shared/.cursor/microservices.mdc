@@ -1,0 +1,39 @@
+---
+description: Microservice layout, REST/gRPC, Result, ErrorCode
+globs: src/**/*.cs
+alwaysApply: false
+---
+
+# Microservices
+
+- Microservice projects: **`Company.`** prefix (e.g. `Company.ProductService`, `Company.CartService`). `ApiGateway` is the exception.
+- Shared per-service package: **`Company.Shared.{ServiceName}`** — gRPC proto, client, Kafka events, shared Result types.
+- Application logic: **`{Feature}Service`** in `Services/` — define **`I{Feature}Service`**; inject the interface in endpoints and gRPC handlers.
+- **CQRS reads vs writes (application service):**
+  - **Queries / reads** (`List*`, `Get*`, …): return **`Dto`** only — **never** domain **`Entities`**. Project entity → **`Dto`** inside the read method (EF: **`AsNoTracking`** + **`Select`** / map before return).
+  - **Commands / writes** that **modify** state: load the entity **directly** from persistence with **tracking** (`DbContext` query / sample **`TryGet`**) — not via a read/query method returning **`Dto`**.
+  - **Commands that only read** (validation, existence check): may call query/read methods and use **`Dto`** (cache-friendly, optimized reads).
+  - Command **responses** to REST/gRPC: return **`Dto`**, not the mutated entity on the public service surface.
+- **Persistence — real projects (EF Core):** do **not** add **`I{Feature}Repository`** — **`DbContext`** is the data access layer; inject **`I{Service}DbContext`** (or the concrete context) into handlers/services/MediatR handlers and query with **`IQueryable`** / **`SaveChangesAsync`**. See **`dotnet-csharp-conventions.mdc`** → EF.
+- **Persistence — this sample only (no EF, fake in-memory):** research/demo projects that fake a DB may use **`I{Feature}Repository`** / **`{Feature}Repository`** over **`ConcurrentDictionary`** — not a pattern to copy when EF Core is present.
+- **Minimal API:** one endpoint per file; `{Feature}EndpointExtensions.cs` wires `Map*Endpoints`. **`Map*`** methods: **`public static void`** — do not return **`RouteHandlerBuilder`** unless the caller chains metadata.
+- **REST:** resource IDs in **route path** — not headers.
+- **Models:** one type per file under `Models/`:
+  - **`Models/Entities/`** — aggregate roots and entities with identity (`Cart`, `Product`, …); not exposed on REST/gRPC.
+  - **`Models/Dtos/`** — API and application data shapes; **`Dto`** suffix — not `View`.
+  - **`Models/ValueObjects/`** — immutable value types when needed; **`Result`/`Result<T>`** live in **`Company.Shared.ValueObjects`** (shared envelope: **`hasError`**, **`error`**, **`data`**, **`pagination`**).
+- **Dto naming:**
+  - **Default:** one **`{Model}Dto`** for REST, application reads/commands, and in-process use — **do not** split into **`UserDto`/`AdminDto`** until that audience needs **different properties**.
+  - **When requirements diverge:** add **`{Model}UserDto`**, **`{Model}AdminDto`**, … plus a dedicated service method (e.g. **`GetProductByUserAsync`**) that may call the generic read (e.g. **`GetProductAsync`** → **`ProductDto`**) and map — reuse cache/shared read logic.
+  - **Inter-microservice (gRPC):** shared cross-cutting wire types in **`Company.Shared/Protos/`** as **`{Model}Dto`** when there is **no** in-process **`{Model}Dto`** (e.g. **`PaginationDto`**, **`ErrorDto`** — in-process types are **`Pagination`**, **`Error`**). Use **`{Model}ContractDto`** in proto **only** when a same-named **`{Model}Dto`** already exists in C# (e.g. **`ProductContractDto`** vs REST **`ProductDto`**). Import shared protos with **`AdditionalImportDirs`**.
+- **Mapping:** inline at the boundary by default; **`Mappers/{Feature}Mappers`** with **extension methods** (e.g. **`product.ToDto()`**) when the same map is reused in **2+ places** (see **`dotnet-csharp-conventions.mdc`** → Mappers).
+- **Proto gRPC:** shared cross-cutting wire types in **`Company.Shared/Protos/`** (source files) → generated C# in **`Company.Shared.Dtos`** (`PaginationDto`, `ErrorDto`). Per-service proto in **`Company.Shared.{ServiceName}/Protos/`** → **`Company.Shared.{ServiceName}.Protos`** (or **`.Dtos`** when no clash). **`{Model}ContractDto`** when REST/application already has **`{Model}Dto`**. Import shared **`.proto`** via **`AdditionalImportDirs`**.
+- **Entity IDs:** **`long`**; generate with **`Interlocked.Increment`** on a counter field — not `Guid`, not `int`.
+- **Business errors:** application layer returns **`Result`/`Result<T>`** with **error code only** (`return CartErrorCode.X;`). **Do not** attach default descriptions in services — **do not throw** domain exceptions. **`GetDescription`** and **`SetErrorDescription`** run at the **HTTP/gRPC boundary** (`ResultHttpExtensions`, `GrpcExtensions`). Map to gRPC **`RpcException`** only at the gRPC handler.
+- **Paged lists:** only **`ListProducts`** (and similar paginated queries) return **`Pagination`** on **`Result<T[]>`** — batch-by-id endpoints (e.g. **`ListProductsByIds`**) return all matched items **without** pagination.
+- **Concurrency (sample):** prefer **`ConcurrentDictionary`** over **`lock`** unless a stronger guarantee is required.
+- **CartService (sample):** one cart per **`userId`** — lazy-create via **`ICartRepository.GetOrCreate`**; no separate create-cart endpoint.
+- **DI lifetime (sample, no EF):** fake in-memory **`ConcurrentDictionary`** → **`AddSingleton<I{Feature}Repository, {Feature}Repository>()`**; application service → **`AddScoped<I{Feature}Service, {Feature}Service>()`**. With EF Core: **`DbContext`** is **Scoped**; no separate repository registration. External clients stay **Singleton** unless they hold per-request state.
+- **Error codes:** each bounded context defines its own **`{Feature}ErrorCode`** static class with **`public const string`** values in **SCREAMING_SNAKE** (e.g. **`PRODUCT_NOT_FOUND`**, **`CART_LINE_NOT_FOUND`**) — **no shared numeric enum**, **no cross-service coupling**. Descriptions and HTTP status mapping live in **`{Feature}ErrorCodeExtensions`** per service. gRPC **`ErrorDto.code`** is a **string** on the wire (shared **`Company.Shared/Protos/error.proto`**). ApiGateway **passes through** each service's JSON **`Result`** unchanged.
+- **Argument layout:** hard-wrap at **100 cols**; first arg on the **same line** as **`(`** — never a vertical one-arg-per-line stack (see **`dotnet-csharp-conventions.mdc`** → Methods and Parameters). Use **target-typed `new()`** when the type is known from context.
+- **HTTP responses:** each service owns **`Extensions/ResultHttpExtensions.ToHttpResponse()`** — resolves HTTP status via its **`{Feature}ErrorCodeExtensions`**, returns **`Result`** envelope JSON with **`TypedResults.Json`**.

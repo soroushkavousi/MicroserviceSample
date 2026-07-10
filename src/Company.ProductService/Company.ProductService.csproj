@@ -13,13 +13,8 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Company.Services\Company.Services.csproj"/>
-        <ProjectReference Include="..\Company.Shared.Clients.ProductService\Company.Shared.Clients.ProductService.csproj"/>
+        <ProjectReference Include="..\Company.Shared.ProductService\Company.Shared.ProductService.csproj"/>
         <ProjectReference Include="..\Company.Shared\Company.Shared.csproj"/>
-    </ItemGroup>
-
-    <ItemGroup>
-        <Protobuf Include="..\Company.Shared.Clients.ProductService\Protos\product-grpc-contract.proto" GrpcServices="Server"/>
     </ItemGroup>
 
 </Project>

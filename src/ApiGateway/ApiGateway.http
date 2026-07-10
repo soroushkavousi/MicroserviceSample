@@ -1,4 +1,9 @@
 @ApiGateway_HostAddress = https://localhost:7080
+@userId = 1
+
+### Gateway info
+GET {{ApiGateway_HostAddress}}/
+Accept: application/json
 
 ### Get all products
 GET {{ApiGateway_HostAddress}}/products?
@@ -43,3 +48,26 @@ Content-Type: application/json
 
 ### Delete product by ID
 DELETE {{ApiGateway_HostAddress}}/products/1
+
+### Get user cart (lazy-created if empty)
+GET {{ApiGateway_HostAddress}}/cart
+Authorization: Bearer {{userId}}
+Accept: application/json
+
+### Add item to user cart
+POST {{ApiGateway_HostAddress}}/cart/items
+Authorization: Bearer {{userId}}
+Content-Type: application/json
+
+{
+  "productId": 3,
+  "quantity": 20
+}
+
+### Remove item from user cart
+DELETE {{ApiGateway_HostAddress}}/cart/items/1
+Authorization: Bearer {{userId}}
+
+### Clear user cart
+DELETE {{ApiGateway_HostAddress}}/cart
+Authorization: Bearer {{userId}}

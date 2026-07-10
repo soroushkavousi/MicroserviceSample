@@ -1,0 +1,314 @@
+---
+description: .NET C# conventions (nullable, formatting, EF, MediatR, mappers, logging, git commits)
+globs: src/**/*.cs
+alwaysApply: false
+---
+
+# .NET C# conventions
+
+## Maintaining Cursor rules
+
+- Keep rules **short and scannable** — bullets, not paragraphs; easy for humans and agents to read.
+- One idea per bullet; avoid repeating the same rule in two sections. **~5 bullets max** per sub-topic — trim or split into another rule file if it grows.
+- **Microservice layout** (REST/gRPC, `Result`, `ErrorCode`): sibling file **`microservices.mdc`** in this folder.
+
+## Nullable reference types (solution-wide)
+
+- **Nullable reference types are disabled** (`<Nullable>disable</Nullable>`). Write code for that mode.
+- **Do not** add **`?`** on reference types for optional/absent values — no `string?`, `MyDto?`, `IRequest<Foo?>`, `Task<Foo?>`, `out SomeClass?`. Use non-suffixed types (`string`, `MyDto`, …).
+- **Keep `?`** only for **nullable value types** (`int?`, `DateTime?`, …).
+
+## Variables and `new`
+
+- **No `var`** — declare types explicitly (`User user = …`).
+- **Target-typed `new`** when type is known: `User user = new(…);`, `return new(…);` (not `return new CreditTransaction(…)`). **`return new(`** must include at least one argument on the same line; wrap per **Methods and Parameters** (~100 cols).
+- **`List<T>.Add`**, initializers: `items.Add(new() { … });` when `items` is `List<SomeDto>`.
+- **Locals** (DTOs, intermediates): **`camelCase`** — not PascalCase (`asanakBalanceModel`, not `AsanakBalanceModel`).
+
+## Private fields
+
+- Non-const private fields: **`_camelCase`**. **`private const`**: PascalCase, no underscore.
+- Modifier order: **`readonly static`**, not `static readonly`. Private → `_camelCase`; public on settings → PascalCase.
+- Fix nearby **`static readonly`** → **`readonly static`** when editing.
+- **Primary-constructor DI types:** no **`private readonly`** fields copying injected params — use constructor params directly. **Keep** fields only for derived state (e.g. `IOptions<T>` snapshot).
+
+## String presence
+
+- Optional/user text: **`string.IsNullOrWhiteSpace`** / **`string.IsNullOrEmpty`** as appropriate for the check.
+
+## Line length and string literals (100 columns)
+
+- **Use hard wrap at 100** for all C#.
+- Apply it to method calls, `catch`/`when`, `if`, signatures, and fluent chains.
+- Break before `&&`/`||`; group method args per **Methods and Parameters**.
+- Long strings: hard-wrap at 100. Put **`+`** at the **start** of the continuation line (not trailing on the previous line). First segment stays on the opening line with earlier args when it fits; spaces at the start of the continued segment.
+- Long first arg (e.g. `Random.Shared.Next` in `Task.Delay`): extract local or break after first complete arg.
+
+## Conditionals, ternary, and braces
+
+- Two-value pick: **`? :`** over nested `if`/`return`. Long ternary: `?` / `:` on own lines.
+- Single-statement **`if`/`else`**: omit braces. Multi-statement, multi-line, or nested: use **`{ }`**.
+
+## Matching constants — `is` / `or`
+
+- Same expression, two+ checks on **one variable**: **`expr is A or B`** — not **`expr == A || expr == B`**. Includes **`null`** and relational patterns (e.g. **`credit is null or <= 0`**, not **`!credit.HasValue || credit <= 0`**).
+- Keep inline in `catch (…) when (…)`.
+- **`==` with `&&`/`||`** when operands are **different** expressions.
+
+## LINQ — `All` vs negated `Any`
+
+- **"Every / none has X"**: **`.All(inverted predicate)`** — not **`!Any(positive)`**.
+- **`!Any()`** for mere existence/empty checks.
+
+## Guard clauses
+
+- Skip-rest conditions: invert + early **`return`/`continue`** instead of deep nesting. Don't invert when both branches are large and central.
+- **Attached result check:** single-line statement then **`if`** on the **next line** — **no blank line** between (e.g. `BalanceResult x = await …;` then `if (x.IsSuccess)`).
+
+## Handler private methods
+
+- **`Handle`** = short checklist; extract cohesive blocks **~15–20+ lines** (`ReturnCreditsToUsersAsync`), not **<~15 lines**. Name for **what**, not step numbers.
+- Keep inline in **`Handle`**: short **try/catch + log + throw** around a few statements (persist/save) — extraction hides the failure path without shrinking **`Handle`** much.
+- Keep existing helpers when refactoring unless logic truly merges. No private method that only wraps one **`mediator.Send`**.
+
+## `OperationResult` / `ApiOperationResult<T>`
+
+- Prefer **implicit conversions**: return **`TResult`/`TData`** (success) or a **string error code** constant from **`{Feature}ErrorCode`** (failure) — not **`BuildSuccess`/`BuildFailure`** unless you need non-default `Result`, description, or other fields.
+
+## MediatR commands and queries
+
+- Application **`Command`/`Query`**: **`record`** body with **`get; init;`**, **`required`** where needed — **not** positional/primary-constructor records. Properties **back-to-back**, no blank lines between. Object initializer at call sites.
+- **CQRS first** — default to a **`Command`** or **`Query`** (+ handler) per use case. Do **not** add an application **service** when a command/query would be clearer.
+- **Services sparingly** — only for logic shared across **two or more** handlers that is **not** worth its own command/query (e.g. tiny infra, third-party adapters, background orchestration).
+- **No jump-reading** — write multi-field business rules **inline** in the command/query handler (explicit **`Status`**, **`PreviewUserId`**, etc.) so a reader does not open domain helpers, entity convenience methods, or shared predicates. Prefer **duplicating the predicate per handler** over **`HasActivePreviewForUser`**-style helpers even when reused elsewhere — rules may diverge per use case.
+- Exceptions: **`mediator.Send`** to another command/query, existing **Spec** types, lock/infra helpers.
+
+## `ShouldCommit` on nested commands
+
+- Nested **Commands** that write to a **`DbContext`** ( **`Add`**, updates, or Dapper on the same tran) should expose **`ShouldCommit`**. Call site always passes **`false`** or **`true` explicitly** — never omit.
+- **`false`**: queue EF/Dapper work only; **caller** may run more nested commands or domain steps, then **`SaveChangesAsync`** once (+ **`CommitAsync`** if in an explicit tran).
+- **`true`**: this command **finishes** the write unit on that **`DbContext`** — call **`SaveChangesAsync`** here (+ **`CommitAsync`** when this command owns the tran). Caller must not **`SaveChangesAsync`** again for the same pending changes unless it adds new EF work afterward.
+- **Async `Handle` vs `Task.FromResult`:** if the command might **`await SaveChangesAsync`** (when **`ShouldCommit`**), declare **`async Task<T> Handle`** and **`return`** the result after the await. Do **not** keep **`Handle`** synchronous and fake async with **`Task.FromResult`** — add **`ShouldCommit`** and a real await instead. Sync **`Handle`** is OK only when the command never awaits I/O.
+- **Credit + Dapper:** **`IncreaseUserBalance`/`IncreaseUserBalances`** — **`false`** = Dapper in current/joined tran only; **`true`** closes SmsDb (log + credit). See **ef-dapper-db-transactions.mdc**.
+- **Caller-owned tran:** orchestrator **`BeginTransactionAsync`**, nested commands **`ShouldCommit = false`**, orchestrator **`SaveChangesAsync`** + **`CommitAsync`** at the end.
+
+## Conventions on touched files
+
+- **Gradual convergence** — apply every matching convention below when editing; scope = files you needed to open.
+- **Checklist:** primary constructor + DI order by injected type length (`ILogger<T>` counts full generic); **`CancellationToken`** (Queries forward token; Commands omit on EF/nested Commands/`SaveChanges`/`Commit` — see **Entity Framework** / **Collections, async, cancellation**); commands/queries as records; explicit **`ShouldCommit`**; implicit **`OperationResult`**; domain constructors/validation; **`private const`** SQL on handler; **`[]`/target **`new`**; **`LogDelay`** only on meaningful I/O (see **Logging**); cache keys, Dapper, EF; git commit message only when **Git commit messages** says to.
+
+## Primary constructors (DI only)
+
+- **Default rule:** primary constructor **only for DI** — handlers, services, controllers, consumers. **Not** for domain entities, DTOs, API models, or general **`class`** types.
+- **Records:** **avoid** primary constructor by default — same reason as below. **Exception:** simple ctor-built **value objects** with **no computed properties** (e.g. **`ValueObjects/Error`**) — primary ctor is OK there.
+- **Why not on records/DTOs:** ctor parameters serialize **first**; **computed** or **body-defined** properties come **after** in JSON. Logical order breaks — e.g. **`FirstName`**, **`LastName`**, **`FullName`** should stay adjacent; with primary ctor, **`FullName`** lands after every ctor param instead of right after **`LastName`**. Prefer explicit properties in declaration order (or positional **`record Foo(T a, T b)`** without mixing computed members — still prefer explicit body when computed props exist).
+- **Each injected parameter on its own line** — always, even when there is only **one** dependency. Put `)` on its own line; base type / interface on the **next** line — never `public class FooHandler(ISmsDbContext ctx) : IRequestHandler<…>` on one line.
+- **Order DI params** by **injected type** character count (shortest first); tie → alphabetical by type name. For **`ILogger<T>`**, count the **full** generic type (e.g. **`ILogger<GetAndRecordProvidersBalanceCommandHandler>`**) — not **`ILogger`** alone; it usually sorts **last**.
+- **DbContext parameter names** — in solutions with multiple DbContexts, name the inject parameter from the interface stem in camelCase: **`ISmsDbContext smsDbContext`**, **`IEngineDbContext engineDbContext`** — not **`context`** or generic **`dbContext`**.
+- No duplicate fields for injected params; fields only for non-DI state (e.g. **`IOptions<T>.Value`** snapshot in ctor body — not re-wrapping plain DI deps).
+
+## Value objects (shared — `Result`, `Error`, …)
+
+Reference: **`ValueObjects/Error.cs`**.
+
+- **DDD-style records:** explicit **`record` body** — not positional/primary-constructor records unless the exception below applies.
+- **Immutable identity, behavior via methods:** ctor/init for stable state (e.g. **`Code`**); mutations through named methods (e.g. **`SetDescription`**) — not public **`set`** on surface.
+- **`private set`** for fields that boundary/application may enrich later (e.g. **`Description`**) — set only inside the VO method, not from callers directly.
+- **Application layer:** return **error code only** (`return CartErrorCode.X;`) — **no** default descriptions in services. **`GetDescription`** / **`SetDescription`** / **`SetErrorDescription`** at HTTP/gRPC boundary — see **`microservices.mdc`**.
+- **`Error` + primary ctor:** kept intentionally — simple ctor-built VO, optional init arg for **`Description`**, no computed properties; acceptable exception to the “no primary ctor on records” rule.
+
+## Domain entities
+
+**Properties:** constructor-only → **`get;` only** (assign in ctor; private helper can't assign `get;`-only — inline or use `private set`). **`Id`:** always **`get;` only** — never **`private set`** (EF/database assigns; domain does not mutate). **Reference navigations** loaded only by EF/Include → **`get;` only** (no **`private set`**) — EF uses backing fields; match **`ApplicationUser.UserDetail`**, **`Payment.Parent`**. Mutated later → **`private set`**. No **`init`** on domain. No **`private set`** if never assigned after ctor. **Order:** logical groups (identity → relationships → amounts → snapshot/copy fields → child collections) — not “all FK+nav at the end”. **Spacing:** properties **back-to-back** within a group — **no blank lines** between them. Blank line **only** before/after a **logical group**. **`FK + nav`:** **`*Id`** then navigation on the **next line** — **no blank line between the pair**; one blank line before and after that pair (or FK group).
+
+**Constructors:** shared validation in **`private` ctor**; path-specific (`Id`, `TransactedAt`, sign flip) in public ctors after `: this(…)`. EF: **`private Entity() { }`** on one line. No marker enums for construction paths.
+
+**Validation:** enums → **`ThrowIfOutOfRange()`** (not `CustomValidators`). **Null / range / string guards (`Company.Shared`):** use **[Ardalis.GuardClauses](https://github.com/ardalis/guardclauses)** — keep guards **simple**: one line, built-in helpers (**`Guard.Against.Null`**, **`NullOrWhiteSpace`**, **`NegativeOrZero`**, …) — not manual **`if` + `throw`**, and not **`Expression`** / **`InvalidInput`** unless a built-in guard does not fit. **Layout:** guard on its **own line**, **immediately above** (back-to-back, **no blank line between**) the line that uses the value — not nested inside assignments, method calls, or property setters. **Separate each validate+use pair** from other code and from other pairs with a **blank line** (e.g. arg1: guard + use on lines 1–2, blank line, arg2: guard + use on lines 4–5). Package lives in **`Company.Shared`**; microservice business rules still return **`Result`** error codes — do not Guard-throw those. **No validation in property `private set` bodies** — property is **`get; private set;`** only; shared rules → **`private void SetDescription(…)`** (etc.) from ctor and **`Modify`**; single call site → validate then assign on the next line. Trusted inputs (ids) may assign without a validate block.
+
+**Child collections (DDD):** dynamic children (e.g. cart lines, order items) — **never** expose a mutable **`List<T>`** / **`ICollection<T>`** on the entity surface. **Backing:** **`private readonly List<TChild> _items = [];`** (or **`Collection<TChild>`** when EF needs it). **Expose:** **`IReadOnlyCollection<TChild>`** (or **`IReadOnlyList<TChild>`** when indexed read is required) — **not** arrays (fixed size). **Mutations:** only through entity methods (**`AddItem`**, **`RemoveItem`**, **`Clear`**, …) — not **`cart.Lines.Add`** from services/handlers. **EF Core:** map the navigation to the **private backing field** / concrete **`List<T>`**; public read-only surface stays **`IReadOnlyCollection<T>`**. Do not use **`init`** on domain entities.
+
+## Constants and settings
+
+- Single-consumer values (batch size, **`…Sql`**, error codes): **`private const`** (or **`private readonly static`**) **on that type** — not `*Scripts`/`*Settings`/`*Consts.cs`. Shared across 2+ Application types → settings class. Runtime-tunable → main settings model when it exists.
+
+## Cache keys and distributed cache
+
+- Composite keys: segment separator **`:`** — not **`_`** between segments (`$"UserTotalSent:{userId}"`). Underscores OK inside a segment name. When touching keys for other reasons, migrate **`_`** separators to **`:`**.
+- **`absoluteExpirationRelativeToNow`** at **`SetAsync`**: write **`TimeSpan.FromMinutes(…)`** inline on the call — not a **`private const`** / field on the handler.
+- Use **`TryGetValueAsync`**, **`SetAsync`**, **`RemoveAsync`** — not sync **`Remove`**.
+- Preview/commit flows: remove preview cache **after successful persist** (e.g. after **`CommitAsync`**) — not right after read; failed commit should allow retry (duplicate commit is OK).
+- Multi-step file preview TTL: match similar flows (often **20 minutes**); too short → final commit returns **`CacheKeyNotFound`**.
+
+## DTOs
+
+- **Application:** **`sealed record`** + **`Dto`** suffix, record body **`get; init;`**. Shared under **`Models/Dtos/`**; short names when context is clear. Handler-local Dapper maps: **`private sealed record`** nested in handler.
+- **Microservices — Dto naming:** default **`{Model}Dto`** in-process and REST; gRPC **`{Model}Dto`** when no C# clash, else **`{Model}ContractDto`** — see **`microservices.mdc`**.
+- **Presentation JSON body:** positional **`public record …Model(…)`** — **`Model`** suffix, not **`Body`/`Request`**; bind **`[FromBody] SomeModel model`**. In this sample, request bodies use **`CreateProductDto`**, **`AddCartItemDto`**, etc.
+
+## Mappers
+
+- Shared entity→DTO/proto maps: **extension methods** on **`{Feature}Mappers`** / **`Company.Shared.Mappers`** (e.g. **`product.ToDto()`**, **`pagination.ToDto()`** → proto **`PaginationDto`**). For **`IQueryable.Select(...)`** expression trees, use a static method reference if the extension does not translate.
+- Extract to **`{Feature}Mappers`** only when the **same** map appears in **2+** call sites; **one-off** maps stay **inline** at the boundary (endpoint, gRPC handler).
+- One mapper class per aggregate/feature.
+
+## Presentation controllers, routes, and naming alignment
+
+- MediatR-backed endpoints: one **`{Operation}`** stem across Application (`{Operation}Command`/`Query`), handler, **`{Operation}Route`**, **`{Operation}Async`**, and **`{Operation}Model`** when a body exists.
+- Pick the stem from the MediatR type; mirror it in action and route constant — do not invent a different verb/noun (wrong: `SubmitDraftAsync` + `SubmitUserMessengerBotDraftCommand`).
+- **Admin vs app:** keep **`ByAdmin`** when the handler is admin-scoped.
+- Route constants in **`*Routes`** beside the controller: **`BaseRoute`** for `[Route(…)]`, one **`{Operation}Route`** per endpoint. URL template may be shorter/kebab-case; **constant name** stays aligned with **`{Operation}`**.
+- HTTP verb + path follow REST; **names** follow the handler. Body model stem matches the command when present.
+
+## Logging and comments
+
+- API handlers: **`LogInformation`** at start of **`Handle`** with structured placeholders.
+- **Seq temp:** use **`LogWarning`** for trace logs that must be visible in Seq until Information level is enabled. Do not downgrade real warnings.
+- **`LogDelay`:** only **awaited I/O** (EF/Dapper, cache, HTTP) — not in-memory **`Add`**/LINQ alone. Start **`Stopwatch`** right before the slow call.
+- **`ShouldCommit`:** if persist is the only I/O, put **`Stopwatch` + `LogDelay` inside** `if (request.ShouldCommit)`; skip when false (`IncreaseUserBalance`).
+- API hot paths: new **`Stopwatch`** per step (`CreateSmsSendRequest`). **`finally`** OK when Dapper always runs. No log after **`FireAndForget`**. Use explicit **`threshold`** (e.g. 50ms or **`ApiSendSettings.DelayLogThreshold`**).
+- **Comments:** default none. English, short, only non-obvious rules; not Persian. Review/scratch comments ok to delete. No obvious/restating comments.
+- **HTTP/provider clients:** log failures **in the client** — **`LogCritical`** for exceptions / HTTP / API errors; **`LogWarning`** for parsed but invalid data. Include **`BaseAddress`**, **`StatusCode`**, **`Response`** when available. Read body **before** **`EnsureSuccessStatusCode`**. Keep logs **inline** in that file (no shared logging helper for one-off calls). Multi-line **`Log*`** calls: first arg on the **same line** as **`(`** (see **Methods and Parameters**).
+- **Pooled `HttpClient`:** put **`Authorization`** on **`HttpRequestMessage`**, not **`DefaultRequestHeaders`**. **`using HttpRequestMessage request = new(HttpMethod.Post, path);`** then assign **`Content`** and headers on the next lines — not an initializer on **`new HttpRequestMessage(…)`**.
+- **Logging-only** changes: do not alter return values, catch behavior, or throw vs swallow unless explicitly requested.
+- **Where to log:** at the **lowest** helper that detects the failure (e.g. **`GetTokenAsync`** catch) — callers **`return`** on failure without a second log for the same root cause.
+
+## Git commit messages
+
+- **When to suggest:** only when the task looks **finished** and a commit/push is **likely next** — user asks for a message, says they will commit, or the change is clearly a complete unit with no obvious follow-up.
+- **When not to:** do **not** run **`git status`**/**`git diff`** or append a commit message after every edit; skip for questions, reviews, exploratory work, and mid-task WIP where more changes are expected.
+- Don't run **`git commit`** unless asked.
+- When you do suggest: read **full pending working tree** (`git status` + `git diff`); title + body in one copy-paste block.
+- Prefix: **`feat:`**, **`fix:`**, **`refactor:`**, **`ai:`** (Cursor rules/skills), **`docs:`** (product docs) — **no scope in parentheses**.
+- **Choose prefix by intent:**
+  - **`feat:`** — new capability or behavior the project did not have before (new endpoint, new service, new integration).
+  - **`refactor:`** — reshape existing code or settings without adding a new user-facing capability (serializer options, DI wiring, rename, extract method).
+  - **`fix:`** — correct broken or wrong behavior.
+  - Do **not** default to **`feat:`** when only tuning or reorganizing what already exists.
+- **Title:** after the prefix, start with a **simple verb** (`add`, `fix`, `hide`, `remove`, `update`, `wire`, …) — not a bare noun phrase. Plain language; no heavy jargon (`instrument`, `orchestrate`, `omit`, …).
+- **Body:** one block — title, blank line, then body. Use **bullet lines** (`- …`) when several distinct changes are easier to scan than one paragraph. Keep bullets short (one idea each). Omit body when the title alone is enough.
+- Do not use separate "Title:" / "Body:" headings in the suggestion — one copy-paste block for git.
+
+**Examples:**
+
+```
+feat: add pending credit inbox for faster balance updates
+
+- Replace direct CreditTransactions writes with PendingCreditTransactions
+- Apply balance on decrease via Dapper; async increase via background workers
+- Archive completed pending to ledger; push balance only from Archiver job
+- Disable balance triggers; add CHECK on UserBalances
+- Use explicit ShouldCommit on payment, send, and admin callers
+- Finalize send: commit credit only after Engine save
+- Remove RemoveCreditTransaction; use CompensationJob for stuck Reserved
+- Add migrations, SQL scripts, and performance docs
+```
+
+```
+refactor: hide null fields in API JSON responses
+
+- Set WhenWritingNull on shared JsonSerializerOptions extensions
+- Register ConfigureSharedHttpJsonOptions in ProductService and CartService
+```
+
+```
+fix: restore LogCritical when finalize fails after debit
+
+Log Engine failure after DecreaseUserBalance; Reserved stays for CompensationJob.
+```
+
+## Scope
+
+- Apply across **`src/**/*.cs`** unless a stronger in-repo pattern exists.
+- For microservice projects, also follow **`microservices.mdc`** in this folder.
+
+## File formatting
+
+- **No spurious blank lines** — not between every `using`, statement, or brace. One blank after last `using`, then `namespace`. Match neighboring file density.
+
+## Entity Framework
+
+**`IEntityTypeConfiguration`:** configure every scalar explicitly. Relationships + indexes for real query paths; navigations need relationship even when FK scalar exists. **`HasIndex` last** (append new indexes at end). Single-line `Property`/`HasIndex` back-to-back; at most one blank line before a multi-line fluent block. No **`HasColumnOrder`** unless requested — match entity property order in **`Configure`**.
+
+**Migrations — team-owned; agents do not generate schema migrations:** after Domain / **`IEntityTypeConfiguration`** changes, **stop**. Do **not** run **`dotnet ef migrations add`**, **`dotnet ef database update`**, or create/edit/rename anything under **`Migrations/`** (`YYYYMMDDHHMMSS_*.cs`, `.Designer.cs`, `*DbContextModelSnapshot`) unless the user **explicitly** asks. Tell them which **`dotnet ef migrations add …`** command to run.
+
+**`*MigrationScripts.cs` — only SQL EF Core cannot emit:** **`public const string`** raw literals (`"""…"""`) for paste into **Up/Down** after the user generates the migration — triggers disable/enable, data move/backfill, seed, table swap with copy, etc. Do **not** put schema EF already maps: **CREATE TABLE**, column/type changes, **indexes** from **`HasIndex`**, FKs, check constraints from fluent API, **`ValueGeneratedNever`** on keys. Agents do **not** add **`migrationBuilder.Sql(…)`** to a generated migration file unless explicitly asked.
+
+**FK via relationship:** don't also **`Property(x => x.SomeId)`**. Relationship block at same position as FK on entity.
+
+**Value objects:** **`AddValueObjectsDbConverters`**; **`builder.Property(x => x.Mobile).IsRequired()`** — not **`OwnsOne`** when converter exists. Avoid **`HasColumnType`** when **`HasPrecision`/`HasMaxLength`/`IsUnicode`** suffice. **`Price`**: **`HasPrecision`** per property.
+
+**Value objects in `IQueryable`:** check **`IEntityTypeConfiguration`** — **`Property` + db converter** vs legacy **`OwnsOne`** — before picking syntax.
+
+- **Db converter** (`AddValueObjectsDbConverters`, e.g. `Mobile`, `PersonName` on newer entities): **do not** use **`.Value`** or **`.Value.ToString()`** in **`Where`/`OrderBy`/…** — EF cannot translate. Partial string match: **`((string)(object)x.Mobile).Contains(phrase)`** (same for other converted VOs).
+- **`OwnsOne` (legacy, e.g. `Invoice.TotalPrice`, `InvoiceDetail.BasePrice`):** use **`.Value`**, **`.ToString()`**, and normal member access — **not** **`(string)(object)`** (double cast is for db-converter VOs only).
+- **Exact `Mobile` match (db-converter):** build the VO **outside** the expression — **`Mobile.IsIranianMobile(…, out Mobile mobile)`** then **`x.Mobile == mobile`**; do not **`new Mobile(…)`** inside **`Where`**.
+- **Sort / filter before `ProjectTo`:** **`OrderBy`/`OrderByDescending(x => x.Mobile)`** on the **entity**; apply phrase filters on the entity query **before** **`ProjectTo`** — not **`orderKeySelector`** on a view that maps through **`.Value`** (expands to untranslatable SQL).
+- **`Select`**, **`Map`**, **`ProjectTo` `MapFrom`**, in-memory: **`.Value`** is fine. Prefer **one** **`ProjectTo<TView>`** with a direct entity→view map — not chained **`ProjectTo`** through an intermediate DTO when output must stay the same.
+
+**Query projections — prefer `Select` over AutoMapper**
+
+- New/edited **query handlers:** project with **`.Select(x => new SomeView { … })`** on the **`IQueryable`** — not **`ProjectTo`** / **`IMapper`**.
+- **AutoMapper** only when the **same** entity→DTO map is reused across **two or more** handlers and a shared helper would hurt readability (e.g. Sepidar DTOs).
+- **Conditional filters:** **`WhereIf(condition, predicate)`** from **`Company.Shared.Extensions`** — not repeated **`if` + `.Where`**.
+- **View shaping in `Select`:** put **Persian date/time formatting** (`DateTimeHelper.UnixTimeToPersianDateCustomFormat`, `UnixTimeToPersianDateTimeCustomFormat`, …) **inside** the `.Select` projection — not a post-query loop or assignment after **`FirstOrDefaultAsync`** / **`ToArrayAsync`**. EF runs non-translatable transforms **client-side** in the projection pipeline.
+
+**Queries:** prefer **`ToArrayAsync()`** + array variable; **`List`/`ToListAsync`** only when list behavior needed after load. **Forward `cancellationToken`** to EF reads, **`ICacheService`** (see **`icache-service.mdc`**), HTTP, and other read-path I/O.
+
+**Filter composition:** for **AND** predicates, use **one** `.Where(...)` with **`&&`** across multiple lines — not chained `.Where` per condition. Chain **`.Where`** only for **OR** branches or optional filter blocks — prefer **`WhereIf`** for optional AND filters (see **Query projections** above). Write status/field checks explicitly in the handler (see **No jump-reading** under MediatR), not via domain convenience properties. In **EF expression trees**, **`is` / `or`** is not translatable — use **`==`** with **`||`** on the same property (e.g. **`x.Status == A || x.Status == B`**).
+
+**Repeated status sets:** when the same status group repeats in a handler/query, define a **named `private readonly static` array** in that file and use **`.Contains(x.Status)`** / **`.Contains(x.ReservedLine.Status)`**. If the set is used only in one file, keep it local to that file (avoid cross-file indirection).
+
+**Lambda layout:** first predicate on the **same line** as **`=>`** — not a line break right after **`.Where(x =>`**. Wrap long predicates with **`&&`** / **`||`** at the **start** of continuation lines (not trailing on the previous line).
+
+**Commands — EF and persistence:** do **not** pass **`cancellationToken`** to EF Core — **`FirstOrDefaultAsync`**, **`ToArrayAsync`**, **`SaveChangesAsync`**, **`SaveAndCommitAsync`**, **`BeginTransactionAsync`/`CommitAsync`**, **`ExecuteUpdateAsync`**, and similar. Same for Dapper in Command handlers unless the team later standardizes otherwise.
+
+**Transactions:** **`await using IDbContextTransaction transaction = await context.Database.BeginTransactionAsync();`** — not plain **`using`**.
+
+**Large child inserts:** save parent with **`SaveChangesAsync`**, then **`BulkInsertAsync`** for large collections — not one EF cascade **`SaveChanges`** on huge navigations (e.g. code reader range parameters).
+
+**Commands — reads:** **`mediator.Send(new SomeQuery { … }, cancellationToken)`** is OK — token stays on **Query** handlers only.
+
+**Commands — nested Commands:** **omit** token on **`mediator.Send`** for **Command** types — do **not** pass **`cancellationToken`** or **`CancellationToken.None`**.
+
+**Multi-step command orchestrators:** several writes that are not one atomic unit (payment, admin credit + log, Decrease + Engine, cross-db) — omit token on nested **Commands**, **`SaveChangesAsync`**, **`CommitAsync`**, and EF transaction helpers. Cancel mid-flow can leave half-applied state.
+
+**Atomic command (rare):** one handler, one commit boundary (e.g. single Dapper batch in one SQL tran) — team default is still **omit** token on EF/Dapper until the team adopts Command tokens project-wide.
+
+**Background jobs:** **`await mediator.Send(new SomeCommand());`** — no token on Command dispatch from **`PeriodicBackgroundService`**.
+
+Handlers still declare **`CancellationToken cancellationToken`** on **`Handle`** (MediatR / hosted-service contract).
+
+## Direct SQL (Application)
+
+- **No **`ExecuteSqlRawAsync`/`ExecuteSqlRaw`/`SqlParameter`**. Use Dapper helper (`QueryAsync`, `ExecuteNonQueryAsync`, `ExecuteNonQueryWithRetryAsync` for deadlock 1205).
+- SQL as **`private const string …Sql`** on handler; **`private sealed record …Dto`** for **`OUTPUT`**. Layout: `=` on const line, `"""` next line, SQL from column 0, closing `"""` own line.
+- Atomic multi-statement: one Dapper call with **`SET XACT_ABORT ON; BEGIN/COMMIT TRANSACTION`** in same const. **`ExecuteUpdateAsync`/`ExecuteDeleteAsync`** on **`IQueryable`** remain fine.
+
+## Collections, async, cancellation
+
+- Loop-built collections: **`List<T> items = [];`** + **`Add`** — not pre-sized array + index. **`foreach`**, not index-only **`for`**.
+- **`Async` suffix**; no **`.Result`/`.Wait()`**.
+- Prefer real **`async`/`await`** over **`Task.FromResult`** / **`Task.CompletedTask`** when **`Handle`** may await I/O — especially **`SaveChangesAsync`** gated by **`ShouldCommit`** (see **`ShouldCommit` on nested commands**).
+
+**`CancellationToken`:** see **Entity Framework** (Queries vs Commands) above — do not duplicate rules here. **`Task.Delay`**, HTTP, MassTransit in Command handlers: omit token unless the team adopts Command tokens project-wide.
+
+## Periodic background jobs
+
+- Interval work: **`PeriodicBackgroundService`** + **`AddHostedService`** + MediatR command in **`ExecuteJobAsync`**. **Not** new Hangfire **`RecurringJob`** unless it belongs on that stack.
+- Set cadence with **`Interval`** on the service — not a fast poll plus distributed-cache “last run” throttle.
+
+## Enum display text (views / API)
+
+- User-facing enum labels: **`IEnumService.GetEnumDescriptionAsync`** — reads **`EnumValues`** (`EnumType` = `typeof(T).Name`).
+- Do **not** mix **`GetDescriptionFromEnumValue()`** for enums that are (or should be) in **`EnumValues`** — one display source per enum.
+- **`GetDescriptionFromEnumValue()`:** only when the enum is **not** seeded in **`EnumValues`** and the label stays code-only.
+- Missing DB row → **`IEnumService`** returns **`Enum.GetName`** (English), not **`[Description]`** — keep **`EnumValues`** seeded for user-facing enums.
+- Messenger enums (`MessengerId`, `MessengerProviderId`, `UserMessengerBotStatus`, `MessengerSendPaymentMethod`, …): seed in **`EnumValues`**; **`[Description]`** on the enum is reference-only.
+
+## Methods and Parameters
+
+- ~100 cols; **several args per line**, not one-per-line. ≤3 args: same line. >3: group on continuation lines.
+- **Single-line / expression-bodied members:** put **`=>`** and the body on the **next line** after the signature — even when it fits within 100 columns. Wrong: `public int Foo() => 1;` Right: signature line, then `    => 1;` on the following line.
+- **Never** one argument per line on **`new`**, method calls, or **`return new(`** — wrong: vertical stacks with a single arg on each continuation line. Pack positional and named args across lines up to ~100 cols (match `AddPaymentCommandHandler` Payment ctor).
+- Multi-line call: the line with **`(`** must include the callee **and ≥1 argument** on the **same line** — wrong: `logger.LogWarning(` then the message alone on the next line. Pack through ~100 cols before breaking; other args on continuation lines. **Long string args:** keep the opening segment on that same line as **`(`**; break the **string** with **`+`** on following lines — not a “blank” first arg line after **`(`**.
+- **Exception:** DI primary constructor declarations — one param per line (see Primary constructors). Domain entities and **`new`** follow this section, not primary-constructor layout.
