@@ -1,55 +1,64 @@
-## MicroserviceSample
+# MicroserviceSample
 
-Hands-on .NET sandbox for exploring microservice patterns and tools. Small by design - for learning and portfolio use,
-not production.
+A focused .NET sample that shows how common microservice pieces fit together in one runnable solution. It stays small on purpose so you can read the code end to end and try changes without a large production setup.
 
-### What it covers
+## Why this sample
 
-- **YARP** - HTTP reverse proxy gateway routing to backend services
-- **gRPC** - internal service-to-service calls (CartService → ProductService)
-- **REST** - public HTTP APIs on each service, unified entry via gateway
-- **Kafka + MassTransit** - async messaging between services
-- **Shared patterns** - Result-based error handling, pagination, domain events
+- **One entry point** — clients call a single gateway URL instead of every service directly.
+- **Mixed protocols** — REST for external APIs, gRPC for fast internal calls.
+- **Async messaging** — Kafka events decouple services for side effects like notifications.
+- **Shared building blocks** — consistent error handling, pagination, and identity headers across services.
 
-### Services
+## What you can learn
 
-| Project                         | Role                                                                                                |
-|---------------------------------|-----------------------------------------------------------------------------------------------------|
-| `Company.ProductService`        | Product catalog: **REST** (public) + **gRPC** (internal); publishes `ProductCreatedEvent` on create |
-| `Company.CartService`           | Shopping cart **REST** API; reads live product prices via **gRPC**                                  |
-| `ApiGateway`                    | **YARP** reverse proxy — forwards `/products/**` and `/cart/**`; fake JWT auth + `X-User-Id` header for cart |
-| `NotificationService`           | Kafka consumer; reacts to product-created events                                                    |
-| `Company.Shared`                | Common types (Result, pagination, errors, user identity headers)                                    |
-| `Company.Shared.ProductService` | gRPC proto/client, Kafka events, shared Result types for ProductService                             |
+- **YARP** — route HTTP traffic from an API gateway to backend services
+- **gRPC** — enrich cart data with live product prices from another service
+- **REST** — public HTTP APIs on each service, unified through the gateway
+- **Kafka + MassTransit** — publish and consume domain events
+- **Result-based errors** — map domain failures to HTTP responses in a consistent way
 
-### How it fits together
+## Architecture
 
 ```
 Client (REST)
     │
     ▼
-ApiGateway (YARP + fake JWT auth)
-    ├── /products/** ──► ProductService (REST, public)
-    └── /cart/**     ──► CartService (REST, requires Bearer {userId})
-                              │  X-User-Id header set by YARP transform
+ApiGateway (YARP + auth)
+    ├── /products/** ──► ProductService (REST)
+    └── /cart/**     ──► CartService (REST)
+                              │  X-User-Id from gateway
                               └── gRPC ──► ProductService
 
 ProductService ── Kafka ──► NotificationService
 ```
 
-See [docs/features/yarp-composite-gateway.md](docs/features/yarp-composite-gateway.md) for the full feature plan.
+Cart routes require `Authorization: Bearer {userId}`. The gateway validates the token and forwards the user id as `X-User-Id`. Backend services read that header — the JWT is not forwarded.
 
-### Quick start
+## Services
 
-**Prerequisites:** .NET SDK, Docker
+| Project | Role |
+|---------|------|
+| `ApiGateway` | YARP reverse proxy; forwards `/products/**` and `/cart/**` |
+| `Company.ProductService` | Product catalog — REST (public) + gRPC (internal); publishes `ProductCreatedEvent` |
+| `Company.CartService` | Shopping cart REST API; reads live prices via gRPC |
+| `NotificationService` | Kafka consumer — reacts to product-created events |
+| `Company.Shared` | Common types: Result, pagination, errors, user identity |
+| `Company.Shared.ProductService` | gRPC proto/client, Kafka events, ProductService Result types |
 
-1. Start Kafka (includes Redpanda Console at http://localhost:8080):
+## Prerequisites
+
+- [.NET SDK](https://dotnet.microsoft.com/download)
+- [Docker](https://www.docker.com/) (for Kafka)
+
+## Quick start
+
+1. **Start Kafka** (Redpanda Console at http://localhost:8080):
 
    ```bash
    docker compose up -d
    ```
 
-2. Build and run (each in a separate terminal):
+2. **Build and run** (separate terminals):
 
    ```bash
    dotnet build
@@ -59,9 +68,21 @@ See [docs/features/yarp-composite-gateway.md](docs/features/yarp-composite-gatew
    dotnet run --project src/ApiGateway
    ```
 
-3. Create a product via the gateway REST API (`POST /products`). ProductService publishes the event and
-   NotificationService logs the notification.
+3. **Try the API** — gateway base URL: `https://localhost:7080`
 
-4. Add items to a user's cart (`POST /cart/items`) and view it (`GET /cart`). Send
-   `Authorization: Bearer {userId}` via the gateway (fake JWT for learning). Each user has one lazy-created cart.
-   Update a product price and refresh the cart to see live gRPC enrichment.
+   Sample requests: [`src/ApiGateway/ApiGateway.http`](src/ApiGateway/ApiGateway.http)
+
+   **Suggested flow:**
+   - Create a product: `POST /products`
+   - NotificationService logs the Kafka event
+   - Add to cart: `POST /cart/items` with `Authorization: Bearer 1`
+   - View cart: `GET /cart` — prices come from ProductService via gRPC
+   - Update a product price and refresh the cart to see live enrichment
+
+## Further reading
+
+- [YARP composite gateway design](docs/features/yarp-composite-gateway.md) — routing, auth, and service boundaries
+
+## Scope
+
+This is a teaching sample, not production-ready software. Persistence is in-memory, auth is simplified, and there is no deployment setup. Use it to understand patterns and swap in real pieces (EF Core, JWT, health checks) as you grow the project.
