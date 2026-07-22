@@ -21,9 +21,26 @@ alwaysApply: false
 ## Variables and `new`
 
 - **No `var`** — declare types explicitly (`User user = …`).
-- **Target-typed `new`** when type is known: `User user = new(…);`, `return new(…);` (not `return new CreditTransaction(…)`). **`return new(`** must include at least one argument on the same line; wrap per **Methods and Parameters** (~100 cols).
-- **`List<T>.Add`**, initializers: `items.Add(new() { … });` when `items` is `List<SomeDto>`.
+- **Target-typed `new`** when type is known from context: locals (`User user = new(…);`), **`return new(…);`**, property assignments (`document.Info = new() { … };`), **`??=`** RHS (`document.Components ??= new();`), **`Add`** / collection initializers (`items.Add(new() { … });`), nested object initializers (`Reference = new() { … }`). Do not repeat the type name when the compiler already knows it.
+- **`return new(`** must include at least one argument on the same line; wrap per **Methods and Parameters** (~100 cols).
 - **Locals** (DTOs, intermediates): **`camelCase`** — not PascalCase (`asanakBalanceModel`, not `AsanakBalanceModel`).
+
+## Company.Shared package references
+
+- Every service references **`Company.Shared`** — NuGet packages installed there are available to all referencing projects at compile time.
+- Add shared dependencies **once** in **`Company.Shared.csproj`** — do **not** duplicate the same **`PackageReference`** in ApiGateway or **`Company.*`** projects unless that project is the **only** consumer and does **not** reference **`Company.Shared`**.
+
+## DI registration extensions
+
+- **`IServiceCollection` / `WebApplication` wiring extensions** (e.g. **`AddCartServiceOpenApi`**, **`MapScalar`**) return **`void`** unless the call site chains further on the extension result.
+- Keep **`Program.cs`** thin: one-line registration per concern; move OpenAPI, auth, MassTransit, and similar blocks into **`Extensions/`** or **`Docs/`** when the body is **non-trivial** (~**5+ lines** or real branching) — do **not** extract a method/extension for **2–3 lines** that only wrap a single call (inline in **`Program.cs`** instead).
+
+## Environment (DotNetPotion)
+
+- Use **`DotNetPotion.AppEnvironmentPack.AppEnvironment`** directly — **no** wrapper in **`Company.Shared`**.
+- **`using DotNetPotion.AppEnvironmentPack;`** then **`AppEnvironment.IsDevelopment`**, **`IsTesting`**, **`IsProduction`**, etc.
+- Supported names: **Development**, **Testing**, **Production**. For non-prod behavior (docs, dev certs, fake auth pre-fill), use **`!AppEnvironment.IsProduction`**.
+- **Production exposure:** do not publish service topology on public endpoints — **`GET /`** is health-only (`{ status: "ok" }`). API reference UI at **`/docs`** (Scalar) and OpenAPI on microservices are non-prod only in this sample unless network-restricted.
 
 ## Private fields
 
@@ -64,6 +81,11 @@ alwaysApply: false
 
 - Skip-rest conditions: invert + early **`return`/`continue`** instead of deep nesting. Don't invert when both branches are large and central.
 - **Attached result check:** single-line statement then **`if`** on the **next line** — **no blank line** between (e.g. `BalanceResult x = await …;` then `if (x.IsSuccess)`).
+
+## Method extraction
+
+- **Do not** add a private method, helper, or extension for **2–3 lines** that only forward to one API call — keep it inline at the call site.
+- **Extract** when the block is **~5+ lines**, has branching/loops, or is reused in **2+** places.
 
 ## Handler private methods
 

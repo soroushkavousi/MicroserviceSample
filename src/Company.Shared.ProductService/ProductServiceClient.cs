@@ -1,4 +1,3 @@
-using System.Net.Security;
 using Company.Shared.Dtos;
 using Company.Shared.Mappers;
 using Company.Shared.ProductService.Errors;
@@ -19,7 +18,7 @@ public sealed class ProductServiceClient : IProductServiceClient, IDisposable
     {
         GrpcChannelOptions options = new();
 
-        if (AppEnvironment.IsDevelopment)
+        if (!AppEnvironment.IsProduction)
         {
             options.HttpHandler = new SocketsHttpHandler
             {
