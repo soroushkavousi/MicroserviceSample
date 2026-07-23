@@ -10,7 +10,10 @@ public static class AddCartItemEndpoint
 {
     public static void MapAddCartItem(this RouteGroupBuilder group)
     {
-        group.MapPost("/items", HandleAsync);
+        group.MapPost("/items", HandleAsync)
+            .WithName("AddCartItem")
+            .WithSummary("Add cart item")
+            .WithDescription("Adds a product line to the current user's cart.");
     }
 
     private static async Task<IResult> HandleAsync(

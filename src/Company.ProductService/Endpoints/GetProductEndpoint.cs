@@ -9,7 +9,10 @@ public static class GetProductEndpoint
 {
     public static void MapGetProduct(this RouteGroupBuilder group)
     {
-        group.MapGet("/{id:long}", HandleAsync);
+        group.MapGet("/{id:long}", HandleAsync)
+            .WithName("GetProduct")
+            .WithSummary("Get product")
+            .WithDescription("Returns a single product by id.");
     }
 
     private static async Task<IResult> HandleAsync(IProductService productService, long id,

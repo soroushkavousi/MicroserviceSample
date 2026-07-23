@@ -40,7 +40,7 @@ alwaysApply: false
 - Use **`DotNetPotion.AppEnvironmentPack.AppEnvironment`** directly — **no** wrapper in **`Company.Shared`**.
 - **`using DotNetPotion.AppEnvironmentPack;`** then **`AppEnvironment.IsDevelopment`**, **`IsTesting`**, **`IsProduction`**, etc.
 - Supported names: **Development**, **Testing**, **Production**. For non-prod behavior (docs, dev certs, fake auth pre-fill), use **`!AppEnvironment.IsProduction`**.
-- **Production exposure:** do not publish service topology on public endpoints — **`GET /`** is health-only (`{ status: "ok" }`). API reference UI at **`/docs`** (Scalar) and OpenAPI on microservices are non-prod only in this sample unless network-restricted.
+- **Production exposure:** do not publish service topology on public endpoints. API reference at **`/docs`** and OpenAPI on microservices are non-prod only unless network-restricted. Defer **health/metrics** endpoints until a monitoring stack is added.
 
 ## Private fields
 
@@ -200,13 +200,22 @@ Reference: **`ValueObjects/Error.cs`**.
 - **When not to:** do **not** run **`git status`**/**`git diff`** or append a commit message after every edit; skip for questions, reviews, exploratory work, and mid-task WIP where more changes are expected.
 - Don't run **`git commit`** unless asked.
 - When you do suggest: read **full pending working tree** (`git status` + `git diff`); title + body in one copy-paste block.
-- Prefix: **`feat:`**, **`fix:`**, **`refactor:`**, **`ai:`** (Cursor rules/skills), **`docs:`** (product docs) — **no scope in parentheses**.
-- **Choose prefix by intent:**
-  - **`feat:`** — new capability or behavior the project did not have before (new endpoint, new service, new integration).
-  - **`refactor:`** — reshape existing code or settings without adding a new user-facing capability (serializer options, DI wiring, rename, extract method).
-  - **`fix:`** — correct broken or wrong behavior.
-  - Do **not** default to **`feat:`** when only tuning or reorganizing what already exists.
-- **Title:** after the prefix, start with a **simple verb** (`add`, `fix`, `hide`, `remove`, `update`, `wire`, …) — not a bare noun phrase. Plain language; no heavy jargon (`instrument`, `orchestrate`, `omit`, …).
+- Format: **`type: title`** — **no scope in parentheses** (not `feat(api): …`). Follow [Conventional Commits](https://www.conventionalcommits.org/).
+- **Pick `type` by primary intent** (ask: did we *add* a capability, *fix* a bug, or *reshape* what already exists?):
+  - **`feat:`** — **new** user/system capability that did not exist before (new endpoint, new service, new integration, first-time Scalar/OpenAPI setup). Not for polishing an existing feature.
+  - **`fix:`** — correct **broken / wrong** behavior (bug, incorrect status code, regression).
+  - **`refactor:`** — change structure, naming, metadata, wiring, or UX of **existing** code **without** a new capability and **without** fixing a bug (OpenAPI tags/summaries, extract method, remove dead root routes, reorder docs). Prefer this over **`feat:`** for improvements to something already shipped.
+  - **`perf:`** — same behavior, measurably faster / cheaper.
+  - **`test:`** — add or change **tests only** (or primarily tests).
+  - **`docs:`** — **documentation files only** (README, product docs). Cursor rule (`.mdc`) updates alone → **`ai:`**, not **`docs:`**.
+  - **`style:`** — formatting / whitespace only; no logic change.
+  - **`build:`** — build system, project files, or dependency bumps that affect the build.
+  - **`ci:`** — CI pipeline config only.
+  - **`chore:`** — maintenance that does not change app/test source in a meaningful way (tooling, ignore files) when no better type fits.
+  - **`ai:`** — Cursor rules, skills, agent conventions under **`.cursor/`**.
+  - **`revert:`** — revert a previous commit.
+- **Hard rules:** never default to **`feat:`** for “we improved X”. If X already existed → **`refactor:`** (or **`fix:`** / **`perf:`**). Mix of types in one commit → choose the **dominant** intent.
+- **Title:** after the prefix, start with a **simple verb** (`add`, `fix`, `hide`, `remove`, `update`, `wire`, …) — not a bare noun phrase. Plain language; no heavy jargon.
 - **Body:** one block — title, blank line, then body. Use **bullet lines** (`- …`) when several distinct changes are easier to scan than one paragraph. Keep bullets short (one idea each). Omit body when the title alone is enough.
 - Do not use separate "Title:" / "Body:" headings in the suggestion — one copy-paste block for git.
 
@@ -223,6 +232,14 @@ feat: add pending credit inbox for faster balance updates
 - Finalize send: commit credit only after Engine save
 - Remove RemoveCreditTransaction; use CompensationJob for stuck Reserved
 - Add migrations, SQL scripts, and performance docs
+```
+
+```
+refactor: improve Scalar OpenAPI grouping for Cart and Products
+
+- Tag MapGroups and add name/summary/description on each route
+- Expand all tags; stop method sort that put DELETE first
+- Remove unused root identity routes; update microservices conventions
 ```
 
 ```

@@ -48,7 +48,4 @@ if (!AppEnvironment.IsProduction)
 app.MapGrpcService<ProductServiceGrpc>();
 app.MapProductEndpoints();
 
-if (!AppEnvironment.IsProduction)
-    app.MapGet("/", () => Results.Ok(new { service = "Company.ProductService" }));
-
 app.Run();

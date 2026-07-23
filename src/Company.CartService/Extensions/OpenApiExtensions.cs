@@ -18,6 +18,10 @@ public static class OpenApiExtensions
                         "Shopping cart REST API. Through the gateway, authorize with Bearer {userId} " +
                         "(numeric user id)."
                 };
+                document.Tags =
+                [
+                    new() { Name = "Cart", Description = "Shopping cart operations for the authenticated user." }
+                ];
                 document.Components ??= new();
                 document.Components.SecuritySchemes["Bearer"] = new()
                 {

@@ -14,6 +14,10 @@ public static class OpenApiExtensions
                     Version = "v1",
                     Description = "Product catalog REST API."
                 };
+                document.Tags =
+                [
+                    new() { Name = "Products", Description = "Product catalog CRUD and search." }
+                ];
                 return Task.CompletedTask;
             });
         });

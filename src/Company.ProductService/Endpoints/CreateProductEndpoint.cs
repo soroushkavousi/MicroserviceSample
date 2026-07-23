@@ -9,7 +9,10 @@ public static class CreateProductEndpoint
 {
     public static void MapCreateProduct(this RouteGroupBuilder group)
     {
-        group.MapPost("/", HandleAsync);
+        group.MapPost("/", HandleAsync)
+            .WithName("CreateProduct")
+            .WithSummary("Create product")
+            .WithDescription("Creates a new product in the catalog.");
     }
 
     private static async Task<IResult> HandleAsync(

@@ -23,7 +23,4 @@ if (!AppEnvironment.IsProduction)
 
 app.MapCartEndpoints();
 
-if (!AppEnvironment.IsProduction)
-    app.MapGet("/", () => Results.Ok(new { service = "Company.CartService" }));
-
 app.Run();

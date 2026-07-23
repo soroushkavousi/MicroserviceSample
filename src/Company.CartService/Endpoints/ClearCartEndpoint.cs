@@ -10,7 +10,10 @@ public static class ClearCartEndpoint
 {
     public static void MapClearCart(this RouteGroupBuilder group)
     {
-        group.MapDelete("/", HandleAsync);
+        group.MapDelete("/", HandleAsync)
+            .WithName("ClearCart")
+            .WithSummary("Clear cart")
+            .WithDescription("Removes all items from the current user's cart.");
     }
 
     private static async Task<IResult> HandleAsync(

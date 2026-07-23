@@ -9,7 +9,10 @@ public static class ListProductsEndpoint
 {
     public static void MapListProducts(this RouteGroupBuilder group)
     {
-        group.MapGet("/", HandleAsync);
+        group.MapGet("/", HandleAsync)
+            .WithName("ListProducts")
+            .WithSummary("List products")
+            .WithDescription("Returns a paginated product catalog filtered by search phrase.");
     }
 
     private static async Task<IResult> HandleAsync(

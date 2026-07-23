@@ -9,7 +9,10 @@ public static class UpdateProductEndpoint
 {
     public static void MapUpdateProduct(this RouteGroupBuilder group)
     {
-        group.MapPut("/{id:long}", HandleAsync);
+        group.MapPut("/{id:long}", HandleAsync)
+            .WithName("UpdateProduct")
+            .WithSummary("Update product")
+            .WithDescription("Updates an existing product by id.");
     }
 
     private static async Task<IResult> HandleAsync(IProductService productService, long id,

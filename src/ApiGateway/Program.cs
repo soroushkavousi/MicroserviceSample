@@ -31,8 +31,6 @@ app.UseAuthorization();
 if (!AppEnvironment.IsProduction)
     app.MapApiDocs();
 
-app.MapGet("/", () => Results.Ok(new { status = "ok" }));
-
 app.MapReverseProxy();
 
 app.Run();
