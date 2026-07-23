@@ -13,7 +13,9 @@ public static class ClearCartEndpoint
         group.MapDelete("/", HandleAsync)
             .WithName("ClearCart")
             .WithSummary("Clear cart")
-            .WithDescription("Removes all items from the current user's cart.");
+            .WithDescription("Removes all items from the current user's cart.")
+            .Produces<SuccessResultDto<CartDto>>()
+            .Produces<Result>(StatusCodes.Status401Unauthorized);
     }
 
     private static async Task<IResult> HandleAsync(

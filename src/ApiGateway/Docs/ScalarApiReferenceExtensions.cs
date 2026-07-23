@@ -16,6 +16,7 @@ public static class ScalarApiReferenceExtensions
             options.WithTitle("Company API Gateway")
                 .WithDefaultHttpClient(ScalarTarget.JavaScript, ScalarClient.Fetch)
                 .ExpandAllTags()
+                .HideModels()
                 .AddServer(gatewayBase, "Gateway")
                 .AddDocument("products", "Product Service", routePattern: "/openapi/products.json")
                 .AddDocument("cart", "Cart Service", routePattern: "/openapi/cart.json", isDefault: true)

@@ -1,3 +1,5 @@
+using Company.Shared.Extensions;
+
 namespace Company.ProductService.Extensions;
 
 public static class OpenApiExtensions
@@ -6,6 +8,7 @@ public static class OpenApiExtensions
     {
         services.AddOpenApi(options =>
         {
+            options.AddSharedOpenApiExamples();
             options.AddDocumentTransformer((document, context, cancellationToken) =>
             {
                 document.Info = new()

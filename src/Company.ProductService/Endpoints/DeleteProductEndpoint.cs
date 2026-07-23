@@ -11,7 +11,9 @@ public static class DeleteProductEndpoint
         group.MapDelete("/{id:long}", HandleAsync)
             .WithName("DeleteProduct")
             .WithSummary("Delete product")
-            .WithDescription("Deletes a product from the catalog by id.");
+            .WithDescription("Deletes a product from the catalog by id.")
+            .Produces<SuccessResultDto>()
+            .Produces<Result>(StatusCodes.Status404NotFound);
     }
 
     private static async Task<IResult> HandleAsync(IProductService productService, long id,

@@ -1,3 +1,4 @@
+using Company.Shared.Extensions;
 using Microsoft.OpenApi.Models;
 
 namespace Company.CartService.Extensions;
@@ -8,6 +9,7 @@ public static class OpenApiExtensions
     {
         services.AddOpenApi(options =>
         {
+            options.AddSharedOpenApiExamples();
             options.AddDocumentTransformer((document, context, cancellationToken) =>
             {
                 document.Info = new()

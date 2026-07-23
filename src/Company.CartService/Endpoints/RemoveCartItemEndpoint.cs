@@ -13,7 +13,10 @@ public static class RemoveCartItemEndpoint
         group.MapDelete("/items/{productId:long}", HandleAsync)
             .WithName("RemoveCartItem")
             .WithSummary("Remove cart item")
-            .WithDescription("Removes a product line from the current user's cart.");
+            .WithDescription("Removes a product line from the current user's cart.")
+            .Produces<SuccessResultDto<CartDto>>()
+            .Produces<Result>(StatusCodes.Status404NotFound)
+            .Produces<Result>(StatusCodes.Status401Unauthorized);
     }
 
     private static async Task<IResult> HandleAsync(

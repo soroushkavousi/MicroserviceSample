@@ -12,7 +12,9 @@ public static class CreateProductEndpoint
         group.MapPost("/", HandleAsync)
             .WithName("CreateProduct")
             .WithSummary("Create product")
-            .WithDescription("Creates a new product in the catalog.");
+            .WithDescription("Creates a new product in the catalog.")
+            .Produces<SuccessResultDto<ProductDto>>()
+            .Produces<Result>(StatusCodes.Status400BadRequest);
     }
 
     private static async Task<IResult> HandleAsync(

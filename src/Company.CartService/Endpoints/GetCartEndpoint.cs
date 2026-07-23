@@ -13,7 +13,9 @@ public static class GetCartEndpoint
         group.MapGet("/", HandleAsync)
             .WithName("GetCart")
             .WithSummary("Get cart")
-            .WithDescription("Returns the current user's shopping cart.");
+            .WithDescription("Returns the current user's shopping cart.")
+            .Produces<SuccessResultDto<CartDto>>()
+            .Produces<Result>(StatusCodes.Status401Unauthorized);
     }
 
     private static async Task<IResult> HandleAsync(

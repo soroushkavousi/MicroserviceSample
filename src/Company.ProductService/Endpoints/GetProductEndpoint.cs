@@ -12,7 +12,9 @@ public static class GetProductEndpoint
         group.MapGet("/{id:long}", HandleAsync)
             .WithName("GetProduct")
             .WithSummary("Get product")
-            .WithDescription("Returns a single product by id.");
+            .WithDescription("Returns a single product by id.")
+            .Produces<SuccessResultDto<ProductDto>>()
+            .Produces<Result>(StatusCodes.Status404NotFound);
     }
 
     private static async Task<IResult> HandleAsync(IProductService productService, long id,

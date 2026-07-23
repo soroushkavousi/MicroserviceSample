@@ -12,7 +12,8 @@ public static class ListProductsEndpoint
         group.MapGet("/", HandleAsync)
             .WithName("ListProducts")
             .WithSummary("List products")
-            .WithDescription("Returns a paginated product catalog filtered by search phrase.");
+            .WithDescription("Returns a paginated product catalog filtered by search phrase.")
+            .Produces<PagedSuccessResultDto<ProductDto[]>>();
     }
 
     private static async Task<IResult> HandleAsync(
