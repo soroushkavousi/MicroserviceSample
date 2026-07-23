@@ -1,6 +1,8 @@
 using ApiGateway.Configs;
+using ApiGateway.Docs;
 using ApiGateway.Identity;
 using ApiGateway.Proxy;
+using DotNetPotion.AppEnvironmentPack;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
@@ -26,15 +28,8 @@ WebApplication app = builder.Build();
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapGet("/", () => Results.Ok(new
-{
-    gateway = "Company.ApiGateway",
-    routes = new object[]
-    {
-        new { path = "/products/**", destination = "Company.ProductService", auth = "none" },
-        new { path = "/cart/**", destination = "Company.CartService", auth = "Bearer {userId}" }
-    }
-}));
+if (!AppEnvironment.IsProduction)
+    app.MapApiDocs();
 
 app.MapReverseProxy();
 

@@ -10,7 +10,12 @@ public static class GetCartEndpoint
 {
     public static void MapGetCart(this RouteGroupBuilder group)
     {
-        group.MapGet("/", HandleAsync);
+        group.MapGet("/", HandleAsync)
+            .WithName("GetCart")
+            .WithSummary("Get cart")
+            .WithDescription("Returns the current user's shopping cart.")
+            .Produces<SuccessResultDto<CartDto>>()
+            .Produces<Result>(StatusCodes.Status401Unauthorized);
     }
 
     private static async Task<IResult> HandleAsync(

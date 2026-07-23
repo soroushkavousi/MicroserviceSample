@@ -10,7 +10,13 @@ public static class RemoveCartItemEndpoint
 {
     public static void MapRemoveCartItem(this RouteGroupBuilder group)
     {
-        group.MapDelete("/items/{productId:long}", HandleAsync);
+        group.MapDelete("/items/{productId:long}", HandleAsync)
+            .WithName("RemoveCartItem")
+            .WithSummary("Remove cart item")
+            .WithDescription("Removes a product line from the current user's cart.")
+            .Produces<SuccessResultDto<CartDto>>()
+            .Produces<Result>(StatusCodes.Status404NotFound)
+            .Produces<Result>(StatusCodes.Status401Unauthorized);
     }
 
     private static async Task<IResult> HandleAsync(

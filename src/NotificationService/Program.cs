@@ -39,6 +39,4 @@ builder.Services.AddMassTransit(x =>
 
 WebApplication app = builder.Build();
 
-app.MapGet("/", () => Results.Ok(new { service = "Company.NotificationService" }));
-
 app.Run();
