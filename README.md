@@ -1,23 +1,10 @@
 # MicroserviceSample
 
-A focused .NET sample that shows how common microservice pieces fit together in one runnable solution. It stays small on purpose so you can read the code end to end and try changes without a large production setup.
+[![.NET 10](https://img.shields.io/badge/.NET-10-512BD4?logo=dotnet&logoColor=white)](https://dotnet.microsoft.com/download/dotnet/10.0)
 
-## Why this sample
+MicroserviceSample is a practical .NET 10 solution designed to demonstrate microservice concepts and tools in a single, runnable setup. It consists of multiple independent projects acting as dedicated microservices.
 
-- **One entry point** — clients call a single gateway URL instead of every service directly.
-- **Unified API docs** — each service publishes its own OpenAPI document; the gateway hosts a single Scalar UI over them.
-- **Mixed protocols** — REST for external APIs, gRPC for fast internal calls.
-- **Async messaging** — Kafka events decouple services for side effects like notifications.
-- **Shared building blocks** — consistent error handling, pagination, and identity headers across services.
-
-## What you can learn
-
-- **YARP** — route HTTP traffic from an API gateway to backend services
-- **REST** — public HTTP APIs on each service, unified through the gateway
-- **Scalar + OpenAPI** — interactive docs at the gateway that aggregate per-service OpenAPI specs
-- **gRPC** — enrich cart data with live product prices from another service
-- **Kafka + MassTransit** — publish and consume domain events
-- **Result-based errors** — map domain failures to HTTP responses in a consistent way
+External clients hit a unified API Gateway for REST requests, while internal communication between services is handled seamlessly through gRPC calls and Kafka event messaging.
 
 ## Architecture
 
@@ -28,31 +15,28 @@ Client (REST)
 ApiGateway (YARP + auth)
     ├── /products/** ──► ProductService (REST)
     ├── /cart/**     ──► CartService (REST)
-    │                       │  X-User-Id from gateway
     │                       └── gRPC ──► ProductService
-    └── /docs (Scalar) ──► OpenAPI from ProductService & CartService
+    └── /docs (Scalar)
 
 ProductService ── Kafka ──► NotificationService
 ```
 
-Cart routes require `Authorization: Bearer {userId}`. The gateway validates the token and forwards the user id as `X-User-Id`. Backend services read that header — the JWT is not forwarded.
+Stack: **YARP**, **gRPC**, **Kafka + MassTransit**, **OpenAPI / Scalar**, plus shared Result / pagination / identity helpers.
 
-API reference is at **`/docs`** (Scalar, non-production). Each microservice owns its OpenAPI document; the gateway proxies those specs (`/openapi/products.json`, `/openapi/cart.json`) and renders them together.
+Cart calls need a Bearer token. The gateway validates it and forwards user identity to backends as a header — services never see the JWT.
 
-## Services
-
-| Project | Role |
-|---------|------|
-| `ApiGateway` | YARP reverse proxy for `/products/**` and `/cart/**`; Scalar UI at `/docs` |
-| `Company.ProductService` | Product catalog — REST (public) + gRPC (internal); publishes `ProductCreatedEvent` |
-| `Company.CartService` | Shopping cart REST API; reads live prices via gRPC |
-| `NotificationService` | Kafka consumer — reacts to product-created events |
-| `Company.Shared` | Common types: Result, pagination, errors, user identity, shared OpenAPI helpers |
-| `Company.Shared.ProductService` | gRPC proto/client, Kafka events, ProductService Result types |
+| Project | Responsibility |
+|---------|----------------|
+| `ApiGateway` | Public entry point and Scalar docs UI |
+| `Company.ProductService` | Product catalog (REST + gRPC) and product-created events |
+| `Company.CartService` | Shopping cart API (uses ProductService for live prices) |
+| `NotificationService` | Reacts to product-created events |
+| `Company.Shared` | Shared helpers used by the services |
+| `Company.Shared.ProductService` | Product gRPC contract/client and related event types |
 
 ## Prerequisites
 
-- [.NET SDK](https://dotnet.microsoft.com/download)
+- [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
 - [Docker](https://www.docker.com/) (for Kafka)
 
 ## Quick start
@@ -73,23 +57,16 @@ API reference is at **`/docs`** (Scalar, non-production). Each microservice owns
    dotnet run --project src/ApiGateway
    ```
 
-3. **Try the API** — gateway base URL: `https://localhost:7080`
+3. **Open the docs** at [https://localhost:7080/docs](https://localhost:7080/docs)
 
-   **Suggested flow:**
-   - Create a product: `POST /products`
-   - NotificationService logs the Kafka event
-   - Add to cart: `POST /cart/items` with `Authorization: Bearer 1`
-   - View cart: `GET /cart` — prices come from ProductService via gRPC
-   - Update a product price and refresh the cart to see live enrichment
+   Scalar is the easiest way to explore the Product and Cart APIs and send requests. In Development, Bearer auth is pre-filled for cart calls.
 
-   **Docs & samples:**
-   - Scalar: [https://localhost:7080/docs](https://localhost:7080/docs) — Product and Cart documents; Bearer pre-filled in Development
-   - HTTP file: [`src/ApiGateway/ApiGateway.http`](src/ApiGateway/ApiGateway.http)
+4. **Optional** — walk through a full flow with [`src/ApiGateway/ApiGateway.http`](src/ApiGateway/ApiGateway.http) (create a product → add to cart → view cart → change a price and refresh).
 
 ## Further reading
 
-- [YARP composite gateway design](docs/features/yarp-composite-gateway.md) — routing, auth, and service boundaries
+- [YARP composite gateway](docs/features/yarp-composite-gateway.md) — routing, auth, and how the services are split
 
 ## Scope
 
-This is a teaching sample, not production-ready software. Persistence is in-memory, auth is simplified, and there is no deployment setup. Scalar and OpenAPI are non-production only. Use the sample to understand patterns and swap in real pieces (EF Core, JWT, health checks) as you grow the project.
+Learning / playground sample — not a production app. Auth is fake/simple and there's no deployment setup. In-memory storage keeps startup fast so the focus stays on the microservice wiring. When you outgrow that, swap in the real pieces (EF Core, JWT, health checks).

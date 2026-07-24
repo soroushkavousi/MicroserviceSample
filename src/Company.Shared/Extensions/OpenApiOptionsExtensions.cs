@@ -1,24 +1,24 @@
+using System.Text.Json.Nodes;
 using Company.Shared.ValueObjects;
 using Microsoft.AspNetCore.OpenApi;
-using Microsoft.OpenApi.Any;
-using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi;
 
 namespace Company.Shared.Extensions;
 
 public static class OpenApiOptionsExtensions
 {
-    private static readonly Dictionary<Type, IOpenApiAny> SchemaExamples = new()
+    private static readonly Dictionary<Type, JsonNode> _schemaExamples = new()
     {
-        [typeof(Pagination)] = new OpenApiObject
+        [typeof(Pagination)] = new JsonObject
         {
-            ["pageNumber"] = new OpenApiInteger(1),
-            ["pageSize"] = new OpenApiInteger(10),
-            ["totalItems"] = new OpenApiInteger(42),
-            ["totalPages"] = new OpenApiInteger(5)
+            ["pageNumber"] = 1,
+            ["pageSize"] = 10,
+            ["totalItems"] = 42,
+            ["totalPages"] = 5
         }
     };
 
-    public static OpenApiOptions AddSharedOpenApiExamples(this OpenApiOptions options)
+    public static void AddSharedOpenApiExamples(this OpenApiOptions options)
     {
         options.AddOperationTransformer((operation, _, _) =>
         {
@@ -30,33 +30,29 @@ public static class OpenApiOptionsExtensions
 
         options.AddSchemaTransformer((schema, context, _) =>
         {
-            if (SchemaExamples.TryGetValue(context.JsonTypeInfo.Type, out IOpenApiAny example))
-                schema.Example = example;
+            if (_schemaExamples.TryGetValue(context.JsonTypeInfo.Type, out JsonNode example))
+                schema.Example = example.DeepClone();
             return Task.CompletedTask;
         });
-
-        return options;
     }
 
     private static void TrySetFailureExample(
         OpenApiOperation operation, string statusCode, string errorCode, string errorMessage)
     {
         if (operation.Responses is null
-            || !operation.Responses.TryGetValue(statusCode, out OpenApiResponse response))
-            return;
-
-        if (response.Content is null
+            || !operation.Responses.TryGetValue(statusCode, out IOpenApiResponse response)
+            || response.Content is null
             || !response.Content.TryGetValue("application/json", out OpenApiMediaType mediaType))
             return;
 
-        mediaType.Example = new OpenApiObject
+        mediaType.Example = new JsonObject
         {
-            ["error"] = new OpenApiObject
+            ["error"] = new JsonObject
             {
-                ["code"] = new OpenApiString(errorCode),
-                ["description"] = new OpenApiString(errorMessage)
+                ["code"] = errorCode,
+                ["description"] = errorMessage
             },
-            ["isSuccess"] = new OpenApiBoolean(false)
+            ["isSuccess"] = false
         };
     }
 }

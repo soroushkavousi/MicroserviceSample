@@ -1,4 +1,5 @@
 using Company.Shared.Extensions;
+using Microsoft.OpenApi;
 
 namespace Company.ProductService.Extensions;
 
@@ -17,10 +18,10 @@ public static class OpenApiExtensions
                     Version = "v1",
                     Description = "Product catalog REST API."
                 };
-                document.Tags =
-                [
+                document.Tags = new HashSet<OpenApiTag>
+                {
                     new() { Name = "Products", Description = "Product catalog CRUD and search." }
-                ];
+                };
                 return Task.CompletedTask;
             });
         });
