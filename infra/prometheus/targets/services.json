@@ -1,0 +1,30 @@
+[
+  {
+    "targets": ["host.docker.internal:5121"],
+    "labels": {
+      "service": "api-gateway",
+      "env": "local"
+    }
+  },
+  {
+    "targets": ["host.docker.internal:5148"],
+    "labels": {
+      "service": "product-service",
+      "env": "local"
+    }
+  },
+  {
+    "targets": ["host.docker.internal:5152"],
+    "labels": {
+      "service": "cart-service",
+      "env": "local"
+    }
+  },
+  {
+    "targets": ["host.docker.internal:5212"],
+    "labels": {
+      "service": "notification-service",
+      "env": "local"
+    }
+  }
+]

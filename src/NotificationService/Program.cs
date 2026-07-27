@@ -1,10 +1,16 @@
 using System.Reflection;
+using Company.Shared.Extensions;
 using Company.Shared.ProductService.Events;
 using Confluent.Kafka;
 using MassTransit;
 using NotificationService.Consumers;
+using NotificationService.Services;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddTelemetry(NotificationMetrics.ServiceName);
+builder.Services.AddSingleton<INotificationMetrics, NotificationMetrics>();
+
 Assembly assembly = Assembly.GetExecutingAssembly();
 
 builder.Services.AddMassTransit(x =>
@@ -39,4 +45,5 @@ builder.Services.AddMassTransit(x =>
 
 WebApplication app = builder.Build();
 
+app.MapMetrics();
 app.Run();

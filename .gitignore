@@ -400,6 +400,9 @@ FodyWeavers.xsd
 # Local History for Visual Studio Code
 .history/
 
+# Personal scratch notes (not part of the repo)
+docs/tmp/
+
 # Windows Installer files from build outputs
 *.cab
 *.msi

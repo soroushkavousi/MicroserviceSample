@@ -2,9 +2,12 @@ using ApiGateway.Configs;
 using ApiGateway.Docs;
 using ApiGateway.Identity;
 using ApiGateway.Proxy;
+using Company.Shared.Extensions;
 using DotNetPotion.AppEnvironmentPack;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddTelemetry("api-gateway");
 
 builder.Services
     .AddAuthentication(FakeJwtAuthenticationDefaults.AuthenticationScheme)
@@ -31,6 +34,7 @@ app.UseAuthorization();
 if (!AppEnvironment.IsProduction)
     app.MapApiDocs();
 
+app.MapMetrics();
 app.MapReverseProxy();
 
 app.Run();

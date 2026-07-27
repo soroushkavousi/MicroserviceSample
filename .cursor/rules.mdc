@@ -1,0 +1,13 @@
+---
+description: Read C# rules from Company.Shared
+alwaysApply: true
+---
+
+# Rules pointer
+
+**Read and apply** the rule files in **`src/Company.Shared/.cursor/`**:
+
+1. **`csharp-dotnet-rules.mdc`** — .NET C# style, formatting, mappers, patterns
+2. **`microservices.mdc`** — microservice layout, REST/gRPC, `Result`, `ErrorCode` (when editing under `src/`)
+
+Edit those files when coding rules change — do not duplicate rules at the workspace root.

@@ -6,7 +6,10 @@ using Company.Shared.ProductService;
 using DotNetPotion.AppEnvironmentPack;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
+
 builder.Services.ConfigureSharedHttpJsonOptions();
+builder.Services.AddTelemetry(CartMetrics.ServiceName);
+builder.Services.AddSingleton<ICartMetrics, CartMetrics>();
 
 string productServiceAddress = builder.Configuration["ProductService:GrpcAddress"]
     ?? "https://localhost:7251";
@@ -21,6 +24,7 @@ WebApplication app = builder.Build();
 if (!AppEnvironment.IsProduction)
     app.MapOpenApi();
 
+app.MapMetrics();
 app.MapCartEndpoints();
 
 app.Run();

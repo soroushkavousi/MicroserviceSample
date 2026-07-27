@@ -7,10 +7,8 @@ using Microsoft.Extensions.Primitives;
 
 namespace ApiGateway.Identity;
 
-public sealed class FakeJwtAuthenticationHandler(
-    IOptionsMonitor<FakeJwtOptions> options,
-    ILoggerFactory logger,
-    UrlEncoder encoder)
+public sealed class FakeJwtAuthenticationHandler(UrlEncoder encoder, ILoggerFactory logger,
+    IOptionsMonitor<FakeJwtOptions> options)
     : AuthenticationHandler<FakeJwtOptions>(options, logger, encoder)
 {
     private const string BearerPrefix = "Bearer ";

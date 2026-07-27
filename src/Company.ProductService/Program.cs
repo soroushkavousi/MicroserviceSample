@@ -9,7 +9,10 @@ using DotNetPotion.AppEnvironmentPack;
 using MassTransit;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
+
 builder.Services.ConfigureSharedHttpJsonOptions();
+builder.Services.AddTelemetry(ProductMetrics.ServiceName);
+builder.Services.AddSingleton<IProductMetrics, ProductMetrics>();
 builder.Services.AddGrpc();
 builder.Services.AddSingleton<IProductRepository, ProductRepository>();
 builder.Services.AddScoped<IProductService, ProductService>();
@@ -45,6 +48,7 @@ WebApplication app = builder.Build();
 if (!AppEnvironment.IsProduction)
     app.MapOpenApi();
 
+app.MapMetrics();
 app.MapGrpcService<ProductServiceGrpc>();
 app.MapProductEndpoints();
 

@@ -1,10 +1,10 @@
 ---
-description: .NET C# conventions (nullable, formatting, EF, MediatR, mappers, logging, git commits)
+description: .NET C# rules (nullable, formatting, EF, MediatR, mappers, logging, git commits)
 globs: src/**/*.cs
 alwaysApply: false
 ---
 
-# .NET C# conventions
+# .NET C# rules
 
 ## Maintaining Cursor rules
 
@@ -40,7 +40,8 @@ alwaysApply: false
 - Use **`DotNetPotion.AppEnvironmentPack.AppEnvironment`** directly — **no** wrapper in **`Company.Shared`**.
 - **`using DotNetPotion.AppEnvironmentPack;`** then **`AppEnvironment.IsDevelopment`**, **`IsTesting`**, **`IsProduction`**, etc.
 - Supported names: **Development**, **Testing**, **Production**. For non-prod behavior (docs, dev certs, fake auth pre-fill), use **`!AppEnvironment.IsProduction`**.
-- **Production exposure:** do not publish service topology on public endpoints. API reference at **`/docs`** and OpenAPI on microservices are non-prod only unless network-restricted. Defer **health/metrics** endpoints until a monitoring stack is added.
+- **Production exposure:** do not publish service topology on public endpoints. API reference at **`/docs`** and OpenAPI on microservices are non-prod only unless network-restricted. Metrics at **`/metrics`** are for local learning — do not expose them publicly without network controls (production often uses OTLP → Collector instead of public scrape).
+
 
 ## Private fields
 
@@ -116,7 +117,7 @@ alwaysApply: false
 
 ## Conventions on touched files
 
-- **Gradual convergence** — apply every matching convention below when editing; scope = files you needed to open.
+- **Gradual convergence** — apply every matching rule below when editing; scope = files you needed to open.
 - **Checklist:** primary constructor + DI order by injected type length (`ILogger<T>` counts full generic); **`CancellationToken`** (Queries forward token; Commands omit on EF/nested Commands/`SaveChanges`/`Commit` — see **Entity Framework** / **Collections, async, cancellation**); commands/queries as records; explicit **`ShouldCommit`**; implicit **`OperationResult`**; domain constructors/validation; **`private const`** SQL on handler; **`[]`/target **`new`**; **`LogDelay`** only on meaningful I/O (see **Logging**); cache keys, Dapper, EF; git commit message only when **Git commit messages** says to.
 
 ## Primary constructors (DI only)
@@ -124,10 +125,24 @@ alwaysApply: false
 - **Default rule:** primary constructor **only for DI** — handlers, services, controllers, consumers. **Not** for domain entities, DTOs, API models, or general **`class`** types.
 - **Records:** **avoid** primary constructor by default — same reason as below. **Exception:** simple ctor-built **value objects** with **no computed properties** (e.g. **`ValueObjects/Error`**) — primary ctor is OK there.
 - **Why not on records/DTOs:** ctor parameters serialize **first**; **computed** or **body-defined** properties come **after** in JSON. Logical order breaks — e.g. **`FirstName`**, **`LastName`**, **`FullName`** should stay adjacent; with primary ctor, **`FullName`** lands after every ctor param instead of right after **`LastName`**. Prefer explicit properties in declaration order (or positional **`record Foo(T a, T b)`** without mixing computed members — still prefer explicit body when computed props exist).
-- **Each injected parameter on its own line** — always, even when there is only **one** dependency. Put `)` on its own line; base type / interface on the **next** line — never `public class FooHandler(ISmsDbContext ctx) : IRequestHandler<…>` on one line.
+- **DI param layout = Methods and Parameters** — pack injected params from the opening **`(`** through ~**100** cols; **never** one param per line; keep **line balance** (see that section). Fits on one line → keep one line (e.g. **`public sealed class CartMetrics(IMeterFactory meterFactory) : ICartMetrics`**).
+- When the primary-ctor list wraps: put **`)`** on the last param line; put **`: IInterface`** / base args on the **next** line only if they do not fit balanced on that last param line.
 - **Order DI params** by **injected type** character count (shortest first); tie → alphabetical by type name. For **`ILogger<T>`**, count the **full** generic type (e.g. **`ILogger<GetAndRecordProvidersBalanceCommandHandler>`**) — not **`ILogger`** alone; it usually sorts **last**.
 - **DbContext parameter names** — in solutions with multiple DbContexts, name the inject parameter from the interface stem in camelCase: **`ISmsDbContext smsDbContext`**, **`IEngineDbContext engineDbContext`** — not **`context`** or generic **`dbContext`**.
-- No duplicate fields for injected params; fields only for non-DI state (e.g. **`IOptions<T>.Value`** snapshot in ctor body — not re-wrapping plain DI deps).
+- No duplicate fields for injected params; fields only for non-DI / derived state (e.g. **`IOptions<T>.Value`** snapshot, **`Counter<T>`** from **`IMeterFactory`**). Prefer primary ctor + field initializers over a separate explicit ctor when initialization is only derived from injected deps.
+- Wrong (one DI param per line):
+  ```csharp
+  public sealed class CartService(
+      ICartMetrics cartMetrics,
+      ICartRepository cartRepository,
+      IProductServiceClient productServiceClient)
+      : ICartService
+  ```
+- Right (packed + balanced):
+  ```csharp
+  public sealed class CartService(ICartMetrics cartMetrics, ICartRepository cartRepository,
+      IProductServiceClient productServiceClient) : ICartService
+  ```
 
 ## Value objects (shared — `Result`, `Error`, …)
 
@@ -346,8 +361,27 @@ Handlers still declare **`CancellationToken cancellationToken`** on **`Handle`**
 
 ## Methods and Parameters
 
-- ~100 cols; **several args per line**, not one-per-line. ≤3 args: same line. >3: group on continuation lines.
+- Hard wrap at ~**100** columns. Pack **several arguments per line** — **never** one argument per line on method calls, **`new`**, or **`return new(`**.
+- ≤3 short args: prefer one line. More / longer args: continue on following lines, still packing multiple args per line up to ~100 cols.
+- The line that opens **`(`** must include the callee **and ≥1 argument** on that **same line**. Wrong: break right after **`(`** with the first arg alone on the next line. Pack from that opening line through ~100 cols, then wrap; keep packing on continuations.
+- **Line balance (important):** do not fill line 1 nearly to 100 cols and leave the next line with only a few leftover tokens. Prefer a relatively even visual split across wrapped lines when practical.
+- **Blank line after a multi-line call:** when a statement is (or assigns from) a multi-line invocation, put a **blank line** before the next statement — do not glue the next line to the closing **`);`**.
 - **Single-line / expression-bodied members:** put **`=>`** and the body on the **next line** after the signature — even when it fits within 100 columns. Wrong: `public int Foo() => 1;` Right: signature line, then `    => 1;` on the following line.
-- **Never** one argument per line on **`new`**, method calls, or **`return new(`** — wrong: vertical stacks with a single arg on each continuation line. Pack positional and named args across lines up to ~100 cols (match `AddPaymentCommandHandler` Payment ctor).
-- Multi-line call: the line with **`(`** must include the callee **and ≥1 argument** on the **same line** — wrong: `logger.LogWarning(` then the message alone on the next line. Pack through ~100 cols before breaking; other args on continuation lines. **Long string args:** keep the opening segment on that same line as **`(`**; break the **string** with **`+`** on following lines — not a “blank” first arg line after **`(`**.
-- **Exception:** DI primary constructor declarations — one param per line (see Primary constructors). Domain entities and **`new`** follow this section, not primary-constructor layout.
+- **Long string args:** keep the opening segment on the same line as **`(`**; break the string with **`+`** on following lines if needed — not a first-arg-only line after **`(`**.
+- Wrong (one arg per line + glued next call):
+  ```csharp
+  _itemsAdded = meter.CreateCounter<long>(
+      "cart.items.added",
+      unit: "{item}",
+      description: "Number of successful add-item operations.");
+  _cartsViewed = meter.CreateCounter<long>(...);
+  ```
+- Right (packed args, balanced wrap, blank line between multi-line calls):
+  ```csharp
+  _itemsAdded = meter.CreateCounter<long>("cart.items.added", unit: "{item}",
+      description: "Number of successful add-item operations.");
+
+  _cartsViewed = meter.CreateCounter<long>("cart.views", unit: "{view}",
+      description: "Number of successful cart views.");
+  ```
+- **DI primary constructors** use this same packing/balance rule (see **Primary constructors**). Domain entities still do **not** use primary constructors.

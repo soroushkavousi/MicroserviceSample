@@ -29,10 +29,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NotificationService", "src\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Company.CartService", "src\Company.CartService\Company.CartService.csproj", "{A7B8C9D0-E1F2-3456-789A-BCDEF0123456}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "conventions", "conventions", "{90E4DA20-497D-4360-B7D3-E73F176FBC05}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "rules", "rules", "{90E4DA20-497D-4360-B7D3-E73F176FBC05}"
 	ProjectSection(SolutionItems) = preProject
-		.cursor\conventions.mdc = .cursor\conventions.mdc
-		src\Company.Shared\.cursor\csharp-dotnet-conventions.mdc = src\Company.Shared\.cursor\csharp-dotnet-conventions.mdc
+		.cursor\rules.mdc = .cursor\rules.mdc
+		src\Company.Shared\.cursor\csharp-dotnet-rules.mdc = src\Company.Shared\.cursor\csharp-dotnet-rules.mdc
 		src\Company.Shared\.cursor\microservices.mdc = src\Company.Shared\.cursor\microservices.mdc
 	EndProjectSection
 EndProject

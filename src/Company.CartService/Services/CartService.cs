@@ -7,16 +7,19 @@ using Company.Shared.ValueObjects;
 
 namespace Company.CartService.Services;
 
-public sealed class CartService(
-    ICartRepository cartRepository,
-    IProductServiceClient productServiceClient)
-    : ICartService
+public sealed class CartService(ICartMetrics cartMetrics, ICartRepository cartRepository,
+    IProductServiceClient productServiceClient) : ICartService
 {
     public async Task<Result<CartDto>> GetCartAsync(long userId,
         CancellationToken cancellationToken)
     {
         Cart cart = cartRepository.GetOrCreate(userId);
-        return await BuildCartDtoAsync(cart, cancellationToken);
+        
+        Result<CartDto> result = await BuildCartDtoAsync(cart, cancellationToken);
+        if (result.IsSuccess)
+            cartMetrics.CartViewed();
+        
+        return result;
     }
 
     public async Task<Result<CartDto>> AddItemAsync(long userId, long productId, int quantity,
@@ -32,6 +35,8 @@ public sealed class CartService(
 
         Cart cart = cartRepository.GetOrCreate(userId);
         cart.AddItem(productId, quantity);
+        cartMetrics.ItemAdded();
+        
         return await BuildCartDtoAsync(cart, cancellationToken);
     }
 

@@ -9,9 +9,8 @@ using MassTransit;
 
 namespace Company.ProductService.Services;
 
-public sealed class ProductService(
-    IProductRepository productRepository,
-    ITopicProducer<long, ProductCreatedEvent> producer)
+public sealed class ProductService(IProductMetrics productMetrics,
+    IProductRepository productRepository, ITopicProducer<long, ProductCreatedEvent> producer)
     : IProductService
 {
     private readonly TimeSpan _processingDelay = TimeSpan.FromMilliseconds(15);
@@ -24,8 +23,9 @@ public sealed class ProductService(
 
         IEnumerable<Product> query = productRepository.GetAll()
             .WhereIf(!string.IsNullOrWhiteSpace(phrase),
-                x => x.Name.Contains(phrase!, StringComparison.OrdinalIgnoreCase)
-                    || (x.Description ?? string.Empty).Contains(phrase, StringComparison.OrdinalIgnoreCase)
+                x => x.Name.Contains(phrase, StringComparison.OrdinalIgnoreCase)
+                    || (x.Description ?? string.Empty).Contains(
+                        phrase, StringComparison.OrdinalIgnoreCase)
                     || x.Price.ToString().Contains(phrase, StringComparison.OrdinalIgnoreCase));
 
         int totalItems = query.Count();
@@ -93,6 +93,8 @@ public sealed class ProductService(
         };
 
         await producer.Produce(id, @event, cancellationToken);
+        productMetrics.ProductCreated();
+        
         return product.ToDto();
     }
 

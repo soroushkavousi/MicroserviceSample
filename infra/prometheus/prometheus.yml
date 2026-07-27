@@ -1,0 +1,18 @@
+# Scrape policy stays here; concrete hosts/ports live under ./targets (file_sd).
+# Local: apps on the host via host.docker.internal (compose sets host-gateway on Linux).
+# Prod tip: prefer a longer file_sd refresh_interval (1m–5m) when targets change rarely.
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: services
+    metrics_path: /metrics
+    file_sd_configs:
+      - files:
+          - /etc/prometheus/targets/*.json
+          - /etc/prometheus/targets/*.yml
+          - /etc/prometheus/targets/*.yaml
+        # Local/dev: pick up JSON edits quickly. Raise for production.
+        refresh_interval: 15s
