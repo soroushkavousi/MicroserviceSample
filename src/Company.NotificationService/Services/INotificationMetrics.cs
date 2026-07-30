@@ -1,4 +1,4 @@
-namespace NotificationService.Services;
+namespace Company.NotificationService.Services;
 
 public interface INotificationMetrics
 {

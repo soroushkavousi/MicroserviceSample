@@ -1,8 +1,8 @@
+using Company.NotificationService.Services;
 using Company.Shared.ProductService.Events;
 using MassTransit;
-using NotificationService.Services;
 
-namespace NotificationService.Consumers;
+namespace Company.NotificationService.Consumers;
 
 public class ProductCreatedEventConsumer(INotificationMetrics notificationMetrics,
     ILogger<ProductCreatedEventConsumer> logger) : IConsumer<ProductCreatedEvent>

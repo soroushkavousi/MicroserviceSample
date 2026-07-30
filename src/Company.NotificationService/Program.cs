@@ -1,10 +1,10 @@
 using System.Reflection;
+using Company.NotificationService.Consumers;
+using Company.NotificationService.Services;
 using Company.Shared.Extensions;
 using Company.Shared.ProductService.Events;
 using Confluent.Kafka;
 using MassTransit;
-using NotificationService.Consumers;
-using NotificationService.Services;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 

@@ -25,7 +25,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "features", "features", "{F9
 		docs\features\yarp-composite-gateway.md = docs\features\yarp-composite-gateway.md
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NotificationService", "src\NotificationService\NotificationService.csproj", "{B2E88709-9A4A-43BB-8E15-979F2E2B13AE}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Company.NotificationService", "src\Company.NotificationService\Company.NotificationService.csproj", "{B2E88709-9A4A-43BB-8E15-979F2E2B13AE}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Company.CartService", "src\Company.CartService\Company.CartService.csproj", "{A7B8C9D0-E1F2-3456-789A-BCDEF0123456}"
 EndProject

@@ -1,6 +1,6 @@
 using System.Diagnostics.Metrics;
 
-namespace NotificationService.Services;
+namespace Company.NotificationService.Services;
 
 public sealed class NotificationMetrics(IMeterFactory meterFactory) : INotificationMetrics
 {
