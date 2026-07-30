@@ -37,7 +37,7 @@ ProductService ── Kafka ──► NotificationService
 | gRPC use case          | `CartService` enriches cart lines with latest product data via `IProductServiceClient`.                                       |
 | Cart identity          | One cart per authenticated user; lazy-created on first access. `userId` is not in route or response body.                     |
 | Shared product package | `Company.Shared.ProductService` — gRPC proto/client + Kafka events.                                                           |
-| Internal HTTP          | Use `http://localhost:5148` (ProductService) and `http://localhost:5152` (CartService) to avoid TLS issues between processes. |
+| Internal HTTP          | **App traffic (YARP, gRPC):** `https://localhost:7251` / `https://localhost:7152` (dev cert; gateway skips validation in Development). **Observability / local REST bypass:** `http://localhost:5148` / `http://localhost:5152` (loopback; Prometheus scrape) — not a second “public” API. |
 | Shared product logic   | `ProductService` singleton used by gRPC handler and REST endpoints.                                                           |
 
 ## Implementation tasks

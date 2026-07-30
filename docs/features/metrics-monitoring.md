@@ -156,7 +156,19 @@ Plus 1–2 **business** counters so the sample is not “infra only”.
 | Prometheus scrape targets | `infra/prometheus/targets/*.json` (add a service here — do not edit `prometheus.yml`) |
 | Grafana provisioning | `infra/grafana/provisioning/` |
 
-HTTP ports used for scrape (see `launchSettings.json`): Gateway `5121`, Product `5148`, Cart `5152`, Notification `5212`.
+HTTP ports used for scrape: Gateway `5121`, Product `5148`, Cart `5152`, Notification `5212`. Product and Cart also listen on HTTPS for gRPC (`7251` / `7152`) — **`Kestrel:Endpoints` in `appsettings.json` wins over `launchSettings.json`**. Each of those services must define an **`Http`** endpoint on the scrape port or Prometheus gets `connection refused` and Kestrel logs *Overriding address(es)*.
+
+### Port model (local sample vs production)
+
+| Listener | Product / Cart (this repo) | Production analogue |
+|----------|---------------------------|---------------------|
+| **HTTPS** (`7251` / `7152`) | YARP → backend, Cart → Product **gRPC**, `Http1AndHttp2` on one TLS port | **App port** behind ingress/mesh; TLS at edge or mTLS service-to-service |
+| **HTTP** (`5148` / `5152`) | Prometheus scrape + optional direct REST on loopback | Often **plain HTTP** on a **private** pod/VPC address for scrape, or **no scrape** (OTLP → Collector) |
+| Internet | Only **ApiGateway** (client-facing) | Ingress / API gateway terminates TLS; backends are not dual-published HTTP+HTTPS to the public |
+
+**Do not read “two ports” as “two public APIs”.** Here, HTTPS is the **application** plane; HTTP on localhost is the **observability / dev convenience** plane. In production you usually **do not** expose `/metrics` on the same URL as user traffic without auth; many teams push metrics via OTLP instead of Prometheus pulling HTTPS.
+
+Prometheus scraping **HTTPS** is possible (`scheme: https`, `tls_config` with a CA or `insecure_skip_verify` in dev only). This sample uses **HTTP scrape on loopback** so Docker Prometheus does not need dev-cert trust — a deliberate local trade-off, not a claim that production scrapes must be HTTP.
 
 **Adding a service to monitoring:** append an entry to `infra/prometheus/targets/services.json` (or add another `*.json` / `*.yml` in that folder). Prometheus reloads targets within `refresh_interval` (~15s) — no Prometheus restart and no `prometheus.yml` change. Filter series by the `service` label (job is `services`). Keep labels lean: `service` + `env` are enough for Grafana variables; avoid duplicate labels that are identical on every target.
 
