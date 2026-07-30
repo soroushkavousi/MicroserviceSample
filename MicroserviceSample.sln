@@ -25,6 +25,27 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "features", "features", "{F9
 		docs\features\yarp-composite-gateway.md = docs\features\yarp-composite-gateway.md
 	EndProjectSection
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "infra", "infra", "{1A2B3C4D-5E6F-7890-ABCD-EF1234567890}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "prometheus", "prometheus", "{2B3C4D5E-6F70-8901-BCDE-F12345678901}"
+	ProjectSection(SolutionItems) = preProject
+		infra\prometheus\prometheus.yml = infra\prometheus\prometheus.yml
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "targets", "targets", "{3C4D5E6F-7081-9012-CDEF-123456789012}"
+	ProjectSection(SolutionItems) = preProject
+		infra\prometheus\targets\services.json = infra\prometheus\targets\services.json
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "grafana", "grafana", "{4D5E6F70-8192-0123-DEF0-234567890123}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "provisioning", "provisioning", "{5E6F7081-92A3-1234-EF01-345678901234}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "datasources", "datasources", "{6F708192-A3B4-2345-F012-456789012345}"
+	ProjectSection(SolutionItems) = preProject
+		infra\grafana\provisioning\datasources\datasource.yml = infra\grafana\provisioning\datasources\datasource.yml
+	EndProjectSection
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Company.NotificationService", "src\Company.NotificationService\Company.NotificationService.csproj", "{B2E88709-9A4A-43BB-8E15-979F2E2B13AE}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Company.CartService", "src\Company.CartService\Company.CartService.csproj", "{A7B8C9D0-E1F2-3456-789A-BCDEF0123456}"
@@ -50,6 +71,12 @@ Global
 		{A7B8C9D0-E1F2-3456-789A-BCDEF0123456} = {A3171734-EFA6-419F-94D1-C5FC42A67317}
 		{E8F4A2B1-3C5D-4E6F-9A0B-1C2D3E4F5A6B} = {98052062-06EB-4B81-8103-831E1B0E352A}
 		{F9A5B3C2-4D6E-5F7A-0B1C-2D3E4F5A6B7C} = {E8F4A2B1-3C5D-4E6F-9A0B-1C2D3E4F5A6B}
+		{1A2B3C4D-5E6F-7890-ABCD-EF1234567890} = {98052062-06EB-4B81-8103-831E1B0E352A}
+		{2B3C4D5E-6F70-8901-BCDE-F12345678901} = {1A2B3C4D-5E6F-7890-ABCD-EF1234567890}
+		{3C4D5E6F-7081-9012-CDEF-123456789012} = {2B3C4D5E-6F70-8901-BCDE-F12345678901}
+		{4D5E6F70-8192-0123-DEF0-234567890123} = {1A2B3C4D-5E6F-7890-ABCD-EF1234567890}
+		{5E6F7081-92A3-1234-EF01-345678901234} = {4D5E6F70-8192-0123-DEF0-234567890123}
+		{6F708192-A3B4-2345-F012-456789012345} = {5E6F7081-92A3-1234-EF01-345678901234}
 		{90E4DA20-497D-4360-B7D3-E73F176FBC05} = {E8F4A2B1-3C5D-4E6F-9A0B-1C2D3E4F5A6B}
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
