@@ -33,10 +33,10 @@ never see the JWT.
 
 | Project                         | Responsibility                                                   |
 |---------------------------------|------------------------------------------------------------------|
-| `ApiGateway`                    | Public entry point and Scalar docs UI                            |
+| `Company.ApiGateway`                    | Public entry point and Scalar docs UI                            |
 | `Company.ProductService`        | Product catalog (REST + gRPC) and product-created events         |
 | `Company.CartService`           | Shopping cart API (uses ProductService for live prices)          |
-| `NotificationService`           | Reacts to product-created events                                 |
+| `Company.NotificationService`           | Reacts to product-created events                                 |
 | `Company.Shared`                | Shared helpers used by the services (including telemetry wiring) |
 | `Company.Shared.ProductService` | Product gRPC contract/client and related event types             |
 
@@ -63,8 +63,8 @@ never see the JWT.
    dotnet build
    dotnet run --project src/Company.ProductService
    dotnet run --project src/Company.CartService
-   dotnet run --project src/NotificationService
-   dotnet run --project src/ApiGateway
+   dotnet run --project src/Company.NotificationService
+   dotnet run --project src/Company.ApiGateway
    ```
 
 3. **Open the docs** at [https://localhost:7080/docs](https://localhost:7080/docs)
@@ -75,7 +75,7 @@ never see the JWT.
 4. **Watch metrics** — after a few requests, open Grafana (Explore or your own dashboard) or check raw scrapes such
    as http://localhost:5148/metrics.
 
-5. **Optional** — walk through a full flow with [`src/ApiGateway/ApiGateway.http`](src/ApiGateway/ApiGateway.http) (
+5. **Optional** — walk through a full flow with [`src/Company.ApiGateway/ApiGateway.http`](src/Company.ApiGateway/ApiGateway.http) (
    create a product → add to cart → view cart → change a price and refresh).
 
 ## Further reading

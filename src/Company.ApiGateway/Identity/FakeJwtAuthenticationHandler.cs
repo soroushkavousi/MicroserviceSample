@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Primitives;
 
-namespace ApiGateway.Identity;
+namespace Company.ApiGateway.Identity;
 
 public sealed class FakeJwtAuthenticationHandler(UrlEncoder encoder, ILoggerFactory logger,
     IOptionsMonitor<FakeJwtOptions> options)

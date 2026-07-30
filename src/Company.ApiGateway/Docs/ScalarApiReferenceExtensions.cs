@@ -1,7 +1,7 @@
 using DotNetPotion.AppEnvironmentPack;
 using Scalar.AspNetCore;
 
-namespace ApiGateway.Docs;
+namespace Company.ApiGateway.Docs;
 
 public static class ScalarApiReferenceExtensions
 {

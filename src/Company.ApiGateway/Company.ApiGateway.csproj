@@ -4,6 +4,8 @@
         <TargetFramework>net10.0</TargetFramework>
         <Nullable>disable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
+        <AssemblyName>Company.ApiGateway</AssemblyName>
+        <RootNamespace>Company.ApiGateway</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>

@@ -1,4 +1,4 @@
-namespace ApiGateway.Identity;
+namespace Company.ApiGateway.Identity;
 
 public static class GatewayAuthorizationPolicies
 {

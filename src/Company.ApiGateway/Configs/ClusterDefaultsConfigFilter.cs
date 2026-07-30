@@ -2,7 +2,7 @@ using DotNetPotion.AppEnvironmentPack;
 using Yarp.ReverseProxy.Configuration;
 using Yarp.ReverseProxy.Forwarder;
 
-namespace ApiGateway.Configs;
+namespace Company.ApiGateway.Configs;
 
 public sealed class ClusterDefaultsConfigFilter : IProxyConfigFilter
 {

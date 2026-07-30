@@ -6,7 +6,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Company.ProductService", "s
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Company.Shared.ProductService", "src\Company.Shared.ProductService\Company.Shared.ProductService.csproj", "{AF6907B9-4A6F-47C6-BA25-E13CA9525370}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ApiGateway", "src\ApiGateway\ApiGateway.csproj", "{5CB7F8A7-A1D7-48B8-88D2-289A54281DA0}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Company.ApiGateway", "src\Company.ApiGateway\Company.ApiGateway.csproj", "{5CB7F8A7-A1D7-48B8-88D2-289A54281DA0}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Company.Shared", "src\Company.Shared\Company.Shared.csproj", "{D72B2025-8BD5-43C7-9B57-6ADFF0113BAB}"
 EndProject

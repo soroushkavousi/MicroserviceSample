@@ -1,7 +1,7 @@
-using ApiGateway.Configs;
-using ApiGateway.Docs;
-using ApiGateway.Identity;
-using ApiGateway.Proxy;
+using Company.ApiGateway.Configs;
+using Company.ApiGateway.Docs;
+using Company.ApiGateway.Identity;
+using Company.ApiGateway.Proxy;
 using Company.Shared.Extensions;
 using DotNetPotion.AppEnvironmentPack;
 

@@ -4,7 +4,7 @@ using Company.Shared.Identity;
 using Yarp.ReverseProxy.Transforms;
 using Yarp.ReverseProxy.Transforms.Builder;
 
-namespace ApiGateway.Proxy;
+namespace Company.ApiGateway.Proxy;
 
 public static class UserIdentityTransformExtensions
 {
