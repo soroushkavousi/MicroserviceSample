@@ -156,7 +156,7 @@ Plus 1–2 **business** counters so the sample is not “infra only”.
 | Prometheus scrape targets | `infra/prometheus/targets/*.json` (add a service here — do not edit `prometheus.yml`) |
 | Grafana provisioning | `infra/grafana/provisioning/` |
 
-HTTP ports used for scrape: Gateway `5121`, Product `5148`, Cart `5152`, Notification `5212`. Product and Cart also listen on HTTPS for gRPC (`7251` / `7152`) — **`Kestrel:Endpoints` in `appsettings.json` wins over `launchSettings.json`**. Each of those services must define an **`Http`** endpoint on the scrape port or Prometheus gets `connection refused` and Kestrel logs *Overriding address(es)*.
+HTTP ports used for scrape: Gateway `5121`, Product `5148`, Cart `5152`, Notification `5212` — see each project’s **`Properties/launchSettings.json`** (`applicationUrl`), the usual place for local URLs. Product and Cart need **both** HTTPS and HTTP in that string (gRPC/YARP on TLS, Prometheus on HTTP). In production, binding comes from **`ASPNETCORE_URLS`** / the platform, not `launchSettings` (that file is not deployed). Use **`Kestrel:Endpoints` in `appsettings`** only when you must fix protocols or certificates in config; then set **`externalUrlConfiguration`: true** on the launch profile so IDE URLs do not fight Kestrel.
 
 ### Port model (local sample vs production)
 
