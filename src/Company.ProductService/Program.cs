@@ -2,6 +2,7 @@ using System.Reflection;
 using Company.ProductService;
 using Company.ProductService.Endpoints;
 using Company.ProductService.Extensions;
+using Company.ProductService.Messaging;
 using Company.ProductService.Services;
 using Company.Shared.Extensions;
 using Company.Shared.ProductService.Events;
@@ -18,6 +19,13 @@ builder.Services.AddSingleton<IProductRepository, ProductRepository>();
 builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddScoped<ProductServiceGrpc>();
 builder.Services.AddProductServiceOpenApi();
+builder.Services.Configure<KafkaOptions>(
+    builder.Configuration.GetSection(KafkaOptions.SectionName));
+builder.Services.AddHostedService<ProductKafkaTopicInitializer>();
+
+KafkaOptions kafkaOptions = builder.Configuration
+    .GetSection(KafkaOptions.SectionName)
+    .Get<KafkaOptions>() ?? new();
 
 Assembly assembly = Assembly.GetExecutingAssembly();
 
@@ -34,11 +42,11 @@ builder.Services.AddMassTransit(x =>
 
     x.AddRider(rider =>
     {
-        rider.AddProducer<long, ProductCreatedEvent>("product-created-event");
+        rider.AddProducer<long, ProductCreatedEvent>(ProductKafkaTopics.ProductCreated);
 
         rider.UsingKafka((context, k) =>
         {
-            k.Host("localhost:29092");
+            k.Host(kafkaOptions.BootstrapServers);
         });
     });
 });

@@ -21,7 +21,7 @@ alwaysApply: false
 ## Variables and `new`
 
 - **No `var`** — declare types explicitly (`User user = …`).
-- **Target-typed `new`** when type is known from context: locals (`User user = new(…);`), **`return new(…);`**, property assignments (`document.Info = new() { … };`), **`??=`** RHS (`document.Components ??= new();`), **`Add`** / collection initializers (`items.Add(new() { … });`), nested object initializers (`Reference = new() { … }`). Do not repeat the type name when the compiler already knows it.
+- **Target-typed `new`** when type is known from context: locals (`User user = new(…);`), **`return new(…);`**, property assignments (`document.Info = new() { … };`), **`??=`** RHS (`document.Components ??= new();`), **`Add`** / collection initializers (`items.Add(new() { … });`), nested object initializers (`Reference = new() { … }`, **`Configs = new() { … }`** inside a typed parent initializer). Do not repeat the type name when the compiler already knows it — including **inside** **`Add(new() { … })`** and nested property initializers.
 - **`return new(`** must include at least one argument on the same line; wrap per **Methods and Parameters** (~100 cols).
 - **Locals** (DTOs, intermediates): **`camelCase`** — not PascalCase (`asanakBalanceModel`, not `AsanakBalanceModel`).
 
@@ -56,11 +56,10 @@ alwaysApply: false
 
 ## Line length and string literals (100 columns)
 
-- **Use hard wrap at 100** for all C#.
-- Apply it to method calls, `catch`/`when`, `if`, signatures, and fluent chains.
-- Break before `&&`/`||`; group method args per **Methods and Parameters**.
-- Long strings: hard-wrap at 100. Put **`+`** at the **start** of the continuation line (not trailing on the previous line). First segment stays on the opening line with earlier args when it fits; spaces at the start of the continued segment.
-- Long first arg (e.g. `Random.Shared.Next` in `Task.Delay`): extract local or break after first complete arg.
+- **Hard wrap at 100 is mandatory** for all C# — calls, `catch`/`when`, `if`, signatures, fluent chains, and strings.
+- Break before `&&`/`||`. Arg packing for calls/`new` → **Methods and Parameters**.
+- **Long strings must wrap:** never leave a string past column 100. Split with **`+`** at the **start** of the continuation line (not trailing on the previous line). Put a leading space on the continued segment when needed for word spacing.
+- Long first arg (e.g. `Random.Shared.Next` in `Task.Delay`): extract a local, or break after the first complete arg — still never an empty line after **`(`**.
 
 ## Conditionals, ternary, and braces
 
@@ -181,6 +180,11 @@ Reference: **`ValueObjects/Error.cs`**.
 - **Application:** **`sealed record`** + **`Dto`** suffix, record body **`get; init;`**. Shared under **`Models/Dtos/`**; short names when context is clear. Handler-local Dapper maps: **`private sealed record`** nested in handler.
 - **Microservices — Dto naming:** default **`{Model}Dto`** in-process and REST; gRPC **`{Model}Dto`** when no C# clash, else **`{Model}ContractDto`** — see **`microservices.mdc`**.
 - **Presentation JSON body:** positional **`public record …Model(…)`** — **`Model`** suffix, not **`Body`/`Request`**; bind **`[FromBody] SomeModel model`**. In this sample, request bodies use **`CreateProductDto`**, **`AddCartItemDto`**, etc.
+
+## Configuration options (`appsettings`)
+
+- Bind with **`sealed record`** + **`{ get; init; }`** — not **`class`** with **`set`** (configuration is set once at startup).
+- Nested sections: **`public NestedOptions Child { get; init; } = new();`**; collection roots **`= new();`** when needed.
 
 ## Mappers
 
@@ -361,23 +365,24 @@ Handlers still declare **`CancellationToken cancellationToken`** on **`Handle`**
 
 ## Methods and Parameters
 
-- Hard wrap at ~**100** columns. Pack **several arguments per line** — **never** one argument per line on method calls, **`new`**, or **`return new(`**.
-- ≤3 short args: prefer one line. More / longer args: continue on following lines, still packing multiple args per line up to ~100 cols.
-- The line that opens **`(`** must include the callee **and ≥1 argument** on that **same line**. Wrong: break right after **`(`** with the first arg alone on the next line. Pack from that opening line through ~100 cols, then wrap; keep packing on continuations.
-- **Line balance (important):** do not fill line 1 nearly to 100 cols and leave the next line with only a few leftover tokens. Prefer a relatively even visual split across wrapped lines when practical.
+- Hard wrap at **100** columns. Pack **several arguments per line** — **never** one argument per line on method calls, **`new`**, or **`return new(`**.
+- **No empty first arg line:** the line that opens **`(`** must include the callee **and ≥1 argument** on that **same line**. Wrong: break right after **`(`**. Right: start args immediately, fill toward 100, then wrap.
+- **Line balance (important):** do not fill line 1 nearly to 100 and leave the next line with only a few leftover tokens. Prefer a relatively even split across wrapped lines when practical (move an arg earlier if line 2 would be tiny).
 - **Blank line after a multi-line call:** when a statement is (or assigns from) a multi-line invocation, put a **blank line** before the next statement — do not glue the next line to the closing **`);`**.
 - **Single-line / expression-bodied members:** put **`=>`** and the body on the **next line** after the signature — even when it fits within 100 columns. Wrong: `public int Foo() => 1;` Right: signature line, then `    => 1;` on the following line.
-- **Long string args:** keep the opening segment on the same line as **`(`**; break the string with **`+`** on following lines if needed — not a first-arg-only line after **`(`**.
-- Wrong (one arg per line + glued next call):
+- Wrong (empty first arg line / unbalanced leftover):
   ```csharp
-  _itemsAdded = meter.CreateCounter<long>(
-      "cart.items.added",
-      unit: "{item}",
-      description: "Number of successful add-item operations.");
-  _cartsViewed = meter.CreateCounter<long>(...);
+  logger.LogInformation(
+      "Ensured Kafka topics: {Topics}", string.Join(", ", names));
+
+  _itemsAdded = meter.CreateCounter<long>("cart.items.added", unit: "{item}", description:
+      "Number of successful add-item operations.");
   ```
-- Right (packed args, balanced wrap, blank line between multi-line calls):
+- Right (args start on `(` line, packed, balanced; blank line between multi-line calls):
   ```csharp
+  logger.LogInformation("Ensured Kafka topics: {Topics}",
+      string.Join(", ", names));
+
   _itemsAdded = meter.CreateCounter<long>("cart.items.added", unit: "{item}",
       description: "Number of successful add-item operations.");
 

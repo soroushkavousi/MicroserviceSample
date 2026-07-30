@@ -28,7 +28,7 @@ builder.Services.AddMassTransit(x =>
             k.Host("localhost:29092");
 
             k.TopicEndpoint<ProductCreatedEvent>(
-                topicName: "product-created-event",
+                topicName: ProductKafkaTopics.ProductCreated,
                 groupId: "notification-service-group",
                 configure: e =>
                 {
