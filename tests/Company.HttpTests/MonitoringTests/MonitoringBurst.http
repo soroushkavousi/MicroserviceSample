@@ -1,0 +1,167 @@
+###
+# Cross-service monitoring burst — Run All while watching Grafana.
+#
+# Ordered scenario (product → cart):
+#   1) Create 3 products and inspect them
+#   2) Two users add different products to their carts
+#   3) Remove some lines and re-read carts
+#
+# Also feeds products.created and Kafka → NotificationService.
+# Env: select "local" (http-client.env.json).
+#
+# Rider: IDs are captured with response-handler scripts (client.global.set),
+# then reused as {{productAId}} / {{productBId}} / {{productCId}}.
+###
+
+@gateway = {{gateway}}
+@userId = {{userId}}
+@userIdAlt = {{userIdAlt}}
+@stamp = {{$timestamp}}
+
+############################################################
+# 1) Products — create & inspect
+############################################################
+
+### Create product A
+POST {{gateway}}/products
+Content-Type: application/json
+
+{
+  "name": "Monitor Product A {{stamp}}",
+  "price": 10.00,
+  "description": "Sample burst product A"
+}
+
+> {%
+client.global.set("productAId", response.body.data.id);
+%}
+
+### Create product B
+POST {{gateway}}/products
+Content-Type: application/json
+
+{
+  "name": "Monitor Product B {{stamp}}",
+  "price": 20.00,
+  "description": "Sample burst product B"
+}
+
+> {%
+client.global.set("productBId", response.body.data.id);
+%}
+
+### Create product C
+POST {{gateway}}/products
+Content-Type: application/json
+
+{
+  "name": "Monitor Product C {{stamp}}",
+  "price": 30.00,
+  "description": "Sample burst product C"
+}
+
+> {%
+client.global.set("productCId", response.body.data.id);
+%}
+
+### List products
+GET {{gateway}}/products?phrase=Monitor&page=1&pageSize=10
+Accept: application/json
+
+### Get product A
+GET {{gateway}}/products/{{productAId}}
+Accept: application/json
+
+### Get product B
+GET {{gateway}}/products/{{productBId}}
+Accept: application/json
+
+### Get product C
+GET {{gateway}}/products/{{productCId}}
+Accept: application/json
+
+############################################################
+# 2) Carts — two users, different products
+############################################################
+
+### View cart — user A (empty / existing)
+GET {{gateway}}/cart
+Authorization: Bearer {{userId}}
+Accept: application/json
+
+### View cart — user B
+GET {{gateway}}/cart
+Authorization: Bearer {{userIdAlt}}
+Accept: application/json
+
+### User A adds product A
+POST {{gateway}}/cart/items
+Authorization: Bearer {{userId}}
+Content-Type: application/json
+
+{
+  "productId": {{productAId}},
+  "quantity": 2
+}
+
+### User A adds product B
+POST {{gateway}}/cart/items
+Authorization: Bearer {{userId}}
+Content-Type: application/json
+
+{
+  "productId": {{productBId}},
+  "quantity": 1
+}
+
+### User B adds product B
+POST {{gateway}}/cart/items
+Authorization: Bearer {{userIdAlt}}
+Content-Type: application/json
+
+{
+  "productId": {{productBId}},
+  "quantity": 3
+}
+
+### User B adds product C
+POST {{gateway}}/cart/items
+Authorization: Bearer {{userIdAlt}}
+Content-Type: application/json
+
+{
+  "productId": {{productCId}},
+  "quantity": 1
+}
+
+### Re-read cart — user A
+GET {{gateway}}/cart
+Authorization: Bearer {{userId}}
+Accept: application/json
+
+### Re-read cart — user B
+GET {{gateway}}/cart
+Authorization: Bearer {{userIdAlt}}
+Accept: application/json
+
+############################################################
+# 3) Removals — then confirm carts
+############################################################
+
+### User A removes product A
+DELETE {{gateway}}/cart/items/{{productAId}}
+Authorization: Bearer {{userId}}
+
+### User B removes product C
+DELETE {{gateway}}/cart/items/{{productCId}}
+Authorization: Bearer {{userIdAlt}}
+
+### Final cart — user A (should still have B)
+GET {{gateway}}/cart
+Authorization: Bearer {{userId}}
+Accept: application/json
+
+### Final cart — user B (should still have B)
+GET {{gateway}}/cart
+Authorization: Bearer {{userIdAlt}}
+Accept: application/json

@@ -1,0 +1,10 @@
+###
+# Simple ApiGateway walkthrough — one example of the gateway root.
+# Env: select "local" (http-client.env.json).
+###
+
+@gateway = {{gateway}}
+
+### Gateway info
+GET {{gateway}}/
+Accept: application/json

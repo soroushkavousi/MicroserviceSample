@@ -75,8 +75,10 @@ never see the JWT.
 4. **Watch metrics** — after a few requests, open Grafana (Explore or your own dashboard) or check raw scrapes such
    as http://localhost:5148/metrics.
 
-5. **Optional** — walk through a full flow with [`src/Company.ApiGateway/ApiGateway.http`](src/Company.ApiGateway/ApiGateway.http) (
-   create a product → add to cart → view cart → change a price and refresh).
+5. **Optional** — HTTP tests in [`tests/Company.HttpTests`](tests/Company.HttpTests):
+   `*Flow.http` for simple endpoint walkthroughs, and
+   [`MonitoringTests/MonitoringBurst.http`](tests/Company.HttpTests/MonitoringTests/MonitoringBurst.http)
+   (Run All) for ordered sample traffic while watching Grafana.
 
 ## Further reading
 

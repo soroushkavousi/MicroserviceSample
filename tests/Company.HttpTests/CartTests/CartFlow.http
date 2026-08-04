@@ -1,0 +1,31 @@
+###
+# Simple cart walkthrough — one example per endpoint (via gateway).
+# Env: select "local". Needs an existing product (seedProductId, default 1).
+###
+
+@gateway = {{gateway}}
+@userId = {{userId}}
+@productId = {{seedProductId}}
+
+### Get user cart (lazy-created if empty)
+GET {{gateway}}/cart
+Authorization: Bearer {{userId}}
+Accept: application/json
+
+### Add item to user cart
+POST {{gateway}}/cart/items
+Authorization: Bearer {{userId}}
+Content-Type: application/json
+
+{
+  "productId": {{productId}},
+  "quantity": 2
+}
+
+### Remove item from user cart
+DELETE {{gateway}}/cart/items/{{productId}}
+Authorization: Bearer {{userId}}
+
+### Clear user cart
+DELETE {{gateway}}/cart
+Authorization: Bearer {{userId}}
